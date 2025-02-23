@@ -1,11 +1,17 @@
 Package: AutoCDAScorer
-Title: What the Package Does (One Line, Title Case)
+Title: Automatically score cell death areas (CDAs) on Nicotiana benthamiana leaves
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Joshua", "Williams", , "jowillia@nbi.ac.uk", role = c("aut", "cre"))
+Description: Deep learning computer vision models to automatically score cell death areas (CDAs) on Nicotiana benthamiana leaves between 0 (no cell death) and 6 (strong cell death).
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: 
+    stringr
+URL: https://github.com/joshuandwilliams/AutoCDAScorer
+BugReports: https://github.com/joshuandwilliams/AutoCDAScorer/issues
