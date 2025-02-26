@@ -14,8 +14,9 @@ Suggests:
 Config/testthat/edition: 3
 Imports: 
     fs,
-    keras,
+    keras3,
     magick,
-    readr
+    readr,
+    tensorflow
 URL: https://github.com/joshuandwilliams/AutoCDAScorer
 BugReports: https://github.com/joshuandwilliams/AutoCDAScorer/issues
