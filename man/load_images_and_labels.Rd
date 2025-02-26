@@ -2,29 +2,36 @@
 % Please edit documentation in R/load_cdascorer_dataframe.R
 \name{load_images_and_labels}
 \alias{load_images_and_labels}
-\title{Load images, labels, and file names from a directory}
+\title{Load images and file names from a directory, with optional labels}
 \usage{
-load_images_and_labels(data_dir, image_size = 64)
+load_images_and_labels(data_dir, image_size = 64, labels = TRUE)
 }
 \arguments{
-\item{data_dir}{A string specifying the directory containing subdirectories of images.}
+\item{data_dir}{A string specifying the directory containing images.}
 
 \item{image_size}{An integer specifying the size to which each image should be resized (width, height).
 Default is 64.}
+
+\item{labels}{A logical indicating whether to assign labels based on subdirectory names.
+Default is TRUE.}
 }
 \value{
 A list containing:
 \item{images}{A 4D array of images}
-\item{labels}{A vector of class labels corresponding to each image}
-\item{names}{A vector of image file names}
+\item{labels}{(Only if labels = TRUE) A vector of class labels corresponding to each image}
+\item{filenames}{A vector of image file names}
 }
 \description{
-Loads images, labels, and file names from a given directory. Each class of images is assumed
-to be stored in subdirectories inside \code{data_dir}, and each subdirectory is considered a separate class.
+Loads all \code{.tif} images from the given directory, with the option to assign labels.
+If \code{labels = TRUE}, images are expected to be inside first-level subdirectories, and the
+subdirectory names are used as labels.
+If \code{labels = FALSE}, images are collected from both the main directory and first-level subdirectories,
+and no labels are assigned.
 }
 \examples{
 \dontrun{
-images <- load_images_and_labels(data_dir, image_size=128)
+labeled_data <- load_images_and_labels("path/to/data", image_size=128, labels=TRUE)
+unlabeled_data <- load_images_and_labels("path/to/data", image_size=128, labels=FALSE)
 }
 
 }
