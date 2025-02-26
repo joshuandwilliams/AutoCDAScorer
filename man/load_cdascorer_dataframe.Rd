@@ -16,5 +16,8 @@ A dataframe containing the data from the CSV file if it exists and contains the 
 This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", and "y2".
 }
 \examples{
+\dontrun{
 df <- load_cdascorer_dataframe("path/to/data.csv")
+}
+
 }
