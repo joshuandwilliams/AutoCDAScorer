@@ -14,4 +14,5 @@ This function loads a pre-trained Keras model from the \code{extdata} directory 
 }
 \examples{
 model <- load_cda_model()
+
 }
