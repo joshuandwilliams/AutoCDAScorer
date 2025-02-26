@@ -70,6 +70,38 @@ test_that("load_images_and_labels loads and processes images correctly", {
   unlink(data_dir, recursive = TRUE)
 })
 
+test_that("load_images_and_labels loads images correctly when labels = FALSE", {
+  data_dir <- setup_mock_data_dir()
+
+  # Create additional images in the main directory
+  fs::file_create(file.path(data_dir, "image4.tif"))
+  fs::file_create(file.path(data_dir, "image5.TIF"))
+
+  # Mock image_read and image_resize
+  mock_imread <- mockery::mock(
+    magick::image_blank(width = 100, height = 100, color = "white"), cycle = TRUE
+  )
+
+  mock_resize <- mockery::mock(
+    magick::image_blank(width = 64, height = 64, color = "white"), cycle = TRUE
+  )
+
+  mockery::stub(load_images_and_labels, "magick::image_read", mock_imread)
+  mockery::stub(load_images_and_labels, "magick::image_resize", mock_resize)
+
+  result <- load_images_and_labels(data_dir, 64, labels = FALSE)
+
+  expect_equal(length(dim(result$images)), 4) # 4D array
+  expect_equal(dim(result$images)[4], 5)  # Total number of images
+  expect_equal(length(result$filenames), 5) # Number of filenames
+  expect_equal(dim(result$images)[1:3], c(64, 64, 3)) # Image dimensions
+
+  expected_filenames <- c("image1.tif", "image2.TIF", "image3.tif", "image4.tif", "image5.TIF")
+  expect_setequal(result$filenames, expected_filenames)
+
+  unlink(data_dir, recursive = TRUE)
+})
+
 test_that("load_images_and_labels handles invalid images", {
   data_dir <- setup_mock_data_dir()
 
