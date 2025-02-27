@@ -88,7 +88,7 @@ extract_features <- function(model = "base_cnn", images) {
 #'
 #' @return A vector or matrix containing either the raw softmax values or the predicted class indices.
 #'
-#' @import keras
+#' @import keras3
 #' @export
 predict_score <- function(model = "base_cnn", images, softmax = TRUE) {
   if (is.character(model)) {
