@@ -14,9 +14,11 @@ Suggests:
 Config/testthat/edition: 3
 Imports: 
     fs,
+    ggplot2,
     keras3,
     magick,
     readr,
+    stats,
     tensorflow
 URL: https://github.com/joshuandwilliams/AutoCDAScorer
 BugReports: https://github.com/joshuandwilliams/AutoCDAScorer/issues

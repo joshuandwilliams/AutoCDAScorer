@@ -145,3 +145,7 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
     ))
   }
 }
+
+save_cropped_images <- function(cdascorer, path) {
+  return(NULL)
+}
