@@ -7,7 +7,7 @@
 run_pca(features, num_pcs = 10, savepath = NULL)
 }
 \arguments{
-\item{features}{A matrix or array of extracted features (output from \code{extract_features()}).}
+\item{features}{An array of extracted features (output from \code{extract_features()}).}
 
 \item{num_pcs}{Integer. The number of principal components to retain. Default is 10.}
 

@@ -26,6 +26,10 @@ load_cda_model <- function(model = "base_cnn") {
   path <- fs::path_package("extdata", model_lookup[[model]], package = "AutoCDAScorer")
   model <- keras3::load_model(path)
 
+  if (!inherits(model, c("keras.models.models.model.Model", "keras.src.models.model.Model"))) {
+    stop("Loaded model is not a valid Keras model. It must inherit from keras.models.models.model.Model or keras.src.models.model.Model.")
+  }
+
   return(model)
 }
 
@@ -45,6 +49,14 @@ extract_features <- function(model = "base_cnn", images) {
   if (is.character(model)) {
     model <- load_cda_model(model)  # Load the model by name
   }
+  cat("Shape:", dim(images), "\nType:", class(images), "\n")
+
+  # Validate input images
+  if (!is.array(images) || length(dim(images)) != 4) {
+    stop("Error: 'images' must be a 4D array with dimensions (batch, height, width, channels).")
+  }
+
+  cat("Shape:", dim(images), "\nType:", class(images), "\n")
 
   # Find the last pooling layer in the model
   last_pooling_layer_name <- NULL
@@ -67,7 +79,6 @@ extract_features <- function(model = "base_cnn", images) {
     inputs = model$inputs,
     outputs = model$get_layer(last_pooling_layer_name)$output
   )
-  images <- list(aperm(images, c(4, 1, 2, 3)))
 
   # Predict and extract features for each image
   features <- feature_extraction_model %>% predict(images)
@@ -95,12 +106,11 @@ predict_score <- function(model = "base_cnn", images, softmax = TRUE) {
     model <- load_cda_model(model)  # Load the model by name
   }
 
-  if (!inherits(model, "keras.models.model.Model")) {
+  if (!inherits(model, c("keras.models.models.model.Model", "keras.src.models.model.Model"))) {
     stop("Model is not a valid Keras model")
   }
 
   # Get predictions from the model
-  images <- aperm(images, c(4, 1, 2, 3))
   raw_scores <- model %>% predict(images)
 
   if (softmax) {
@@ -109,4 +119,16 @@ predict_score <- function(model = "base_cnn", images, softmax = TRUE) {
     predicted_classes <- as.integer(apply(raw_scores, 1, which.max) - 1)
     return(predicted_classes)
   }
+}
+
+#' Convert RGB to BGR
+#'
+#' This function takes a dataset containing images in RGB format and converts them to BGR format by reordering the color channels.
+#'
+#' @param dataset A dataset containing images, where images are stored in an array with dimensions `[n, m, 3]`, where the 3rd dimension represents the RGB color channels.
+#'
+#' @return A dataset with the same structure, but the color channels reordered to BGR.
+#' @export
+rgb_to_bgr <- function(dataset){
+  return(dataset$images[,,,c(3,2,1)])
 }

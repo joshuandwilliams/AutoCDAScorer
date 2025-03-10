@@ -113,7 +113,7 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
       message(sprintf("Warning: Failed to load image %s", image_paths[i]))
     } else {
       resized_image <- magick::image_resize(image, paste0(image_size, "x", image_size))
-      images[[i]] <- magick::image_data(resized_image)
+      images[[i]] <- as.numeric(magick::image_data(resized_image))
     }
   }
 
@@ -122,7 +122,7 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
   if (length(images) > 0) {
     images_array <- array(
       unlist(images),
-      dim = c(image_size, image_size, 3, length(images))  # 4D array: (height, width, channels, num_images)
+      dim = c(length(images), image_size, image_size, 3)  # 4D array for TensorFlow
     )
   } else {
     stop("No images were loaded. Please check the directory or file types.")
@@ -131,7 +131,7 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
   sprintf("%s images were loaded", length(images))
 
   image_labels <- as.numeric(image_labels)
-
+  images_array <- aperm(array(unlist(images), dim = c(image_size, image_size, 3, length(images))), c(4, 1, 2, 3))
   if (labels) {
     return(list(
       images = images_array,
@@ -144,6 +144,22 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
       filenames = filenames
     ))
   }
+}
+
+#' Display a Test Image from the Dataset
+#'
+#' This function displays the first image from the given dataset using `rasterGrob` and `grid.draw` from the `grid` package.
+#'
+#' @param dataset A list containing an `images` array. The first image in the array will be displayed.
+#'
+#' @return A visual output of the first image in the dataset.
+#'
+#' @import grid
+#' @export
+show_test_image <- function(dataset) {
+  g <- rasterGrob(dataset$images[1,,,])
+  grid.newpage()
+  grid.draw(g)
 }
 
 save_cropped_images <- function(cdascorer, path) {

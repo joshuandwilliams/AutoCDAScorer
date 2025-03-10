@@ -13,12 +13,16 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports: 
+    cowplot,
     fs,
+    geometry,
     ggplot2,
+    gmodels,
+    grid,
     keras3,
     magick,
+    MASS,
     readr,
-    stats,
-    tensorflow
+    stats
 URL: https://github.com/joshuandwilliams/AutoCDAScorer
 BugReports: https://github.com/joshuandwilliams/AutoCDAScorer/issues
