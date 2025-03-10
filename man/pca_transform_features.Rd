@@ -9,7 +9,7 @@ pca_transform_features(pca, features)
 \arguments{
 \item{pca}{A prcomp object containing the trained PCA model.}
 
-\item{features}{A matrix or array of new features to transform.}
+\item{features}{An array of new features to transform.}
 }
 \value{
 A matrix of PCA-transformed features.
@@ -18,6 +18,8 @@ A matrix of PCA-transformed features.
 This function applies a previously trained PCA model to a new set of features without modifying the PCA itself.
 }
 \examples{
+\dontrun{
 pca_model <- prcomp(existing_images, center = TRUE, scale. = TRUE)
 transformed_images <- pca_transform_images(pca_model, new_images)
+}
 }

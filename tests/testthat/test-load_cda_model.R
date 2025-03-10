@@ -5,13 +5,12 @@ test_that("load_cda_model loads a valid Keras model and handles invalid model na
 
   # Load the default model (base_cnn)
   model <- load_cda_model()
-  expect_true(inherits(model, "keras.models.model.Model"),
+  expect_true(inherits(model, c("keras.models.models.model.Model", "keras.src.models.model.Model")),
               info = "Returned object is not a valid Keras model")
-  expect_gt(length(model$layers), 0)
 
   # Load the model using explicit name
   model_named <- load_cda_model("base_cnn")
-  expect_true(inherits(model_named, "keras.models.model.Model"),
+  expect_true(inherits(model_named, c("keras.models.models.model.Model", "keras.src.models.model.Model")),
               info = "Returned object is not a valid Keras model")
   expect_gt(length(model_named$layers), 0)
 
