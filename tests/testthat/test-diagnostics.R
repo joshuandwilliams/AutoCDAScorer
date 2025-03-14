@@ -185,13 +185,13 @@ test_that("pca_transform_python valid input", {
 
   # Numeric input
   numeric_data <- matrix(runif(10 * 192), nrow = 10, ncol = 192)
-  features_transformed_py <- pca_transform_python(pca_list_py, numeric_data)
+  features_transformed_py <- pca_transform_python(numeric_data, pca_list_py)
   expect_type(features_transformed_py, "double")
   expect_equal(nrow(features_transformed_py), 10)  # n_samples
   expect_equal(ncol(features_transformed_py), 5)   # n_PCs
 
   # List containing images
-  list_transformed_py <- pca_transform_python(pca_list_py, list_data)
+  list_transformed_py <- pca_transform_python(list_data, pca_list_py)
   expect_type(list_transformed_py, "double")
   expect_equal(nrow(list_transformed_py), 10)  # n_images
   expect_equal(ncol(list_transformed_py), 5)   # n_PCs

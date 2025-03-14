@@ -109,10 +109,10 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = FALSE) {
   images <- images[!sapply(images, is.null)]  # Remove NULL images
 
   if (length(images) > 0) {
-    images_array <- array(
-      unlist(images),
-      dim = c(length(images), image_size, image_size, 3)  # 4D array for TensorFlow
-    )
+    images_array <- array(0, dim = c(length(images), image_size, image_size, 3))
+    for (i in seq_along(images)) {
+      images_array[i,,,] <- images[[i]]
+    }
   } else {
     stop("No images were loaded. Please check the directory or file types.")
   }
@@ -154,6 +154,10 @@ show_test_image <- function(dataset) {
   }
   if (length(dim(dataset$images)) != 4) {
     stop("Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).")
+  }
+
+  if (dev.cur() > 1) {
+    dev.off()
   }
 
   g <- rasterGrob(dataset$images[1,,,])
