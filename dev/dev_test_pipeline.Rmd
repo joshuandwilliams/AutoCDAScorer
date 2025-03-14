@@ -21,21 +21,221 @@ model <- load_cda_model("base_cnn")
 
 # Load original images
 original_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/cropped_images", image_size=64, labels=TRUE)
-show_test_image(original_dataset)
 
 # Load new images
 new_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/bio_test", image_size=64, labels=TRUE)
+```
+```{r}
+show_test_image(original_dataset)
 show_test_image(new_dataset)
 ```
 
 # Build PCA from original images and transform new images using generated PCs
 ```{r}
 result_pca <- run_pca_python(original_dataset, n_components=5)
-transformed_new_features <- transform_features_python(new_dataset, result_pca)
+transformed_new_features <- pca_transform_python(new_dataset, result_pca)
+```
+
+```{r}
+print(transformed_new_features)
 ```
 
 # Diagnostic plots
 Replace interactive plot with all-against-all plots. Here are three types: target plots, contour plots, and convex hull plots.
+```{r}
+#' Diagnostic PCA Scatter Plots for All Principal Component Pairs
+#'
+#' This function generates a grid of scatter plots comparing original and new features across
+#' all pairwise combinations of principal components (PCs). It supports different visualization
+#' styles: target-based ellipses, density contours, or convex hulls.
+#'
+#' @param pca A list containing the PCA model output, including `original_features` and `explained_variance`.
+#' @param new_features A matrix of new features transformed by PCA.
+#' @param num_pcs An integer specifying the number of principal components to consider.
+#' @param plot_type A string specifying the type of plot: `"target"`, `"density"`, or `"convexhull"`.
+#' @param num_ellipses An integer specifying the number of ellipses for the `"target"` plot type (default: 3).
+#' @param num_bins An integer specifying the number of bins for the `"density"` plot type (default: 3).
+#'
+#' @return A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
+#'
+#' @import ggplot2
+#' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
+#' @export
+diagnostic_pca_all_against_all <- function(pca, new_features, num_pcs, plot_type, num_ellipses = 3, num_bins = 3) {
+  original_features <- pca$features_pca
+  explained_variance <- pca$explained_variance
+
+  # Input validation
+  if (length(original_features) == 0 || length(new_features) == 0) {
+    stop("Error: Input matrices cannot be empty.")
+  }
+  if (!is.matrix(original_features)) {
+    stop("Error: 'original_features' must be a matrix.")
+  }
+  if (!is.matrix(new_features)) {
+    stop("Error: 'new_features' must be a matrix.")
+  }
+  if (ncol(original_features) != ncol(new_features)) {
+    stop("Original and new features must have the same number of principal components.")
+  }
+  if (num_pcs > ncol(original_features)) {
+    stop("num_pcs exceeds the number of available principal components.")
+  }
+
+  # Generate all possible PC combinations
+  generate_pc_combinations <- function(num_pcs) {
+    combinations <- expand.grid(PC_a = seq_len(num_pcs), PC_b = seq_len(num_pcs))
+    combinations <- combinations[combinations$PC_a < combinations$PC_b, ]
+    return(combinations)
+  }
+
+  # Generate combinations
+  plot_combinations <- generate_pc_combinations(num_pcs)
+
+  # Create list of plots
+  # Lookup table to call the appropriate plotting function based on plot_type
+  plot_list <- lapply(seq_len(nrow(plot_combinations)), function(i) {
+    PC_a <- plot_combinations[i, "PC_a"]
+    PC_b <- plot_combinations[i, "PC_b"]
+
+    if (plot_type == "target") {
+      return(pca_plot_with_target(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_ellipses))
+    } else if (plot_type == "density") {
+      return(pca_plot_with_density(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_bins))
+    } else if (plot_type == "convexhull") {
+      return(pca_plot_with_convex_hull(original_features, new_features, PC_a, PC_b))
+    } else {
+      stop("Invalid plot type.")
+    }
+  })
+
+  create_full_plot_grid <- function(plot_list, num_pcs, explained_variance, plot_combinations) {
+    full_grid <- matrix(list(NULL), nrow = num_pcs, ncol = num_pcs)
+  
+    for (i in seq_len(nrow(plot_combinations))) {
+      pc_a <- plot_combinations[i, "PC_a"]
+      pc_b <- plot_combinations[i, "PC_b"]
+      
+      # Insert the scatter plot in the original position
+      full_grid[[pc_a, pc_b]] <- plot_list[[i]]
+      
+      # Compute explained variance sum
+      total_variance <- explained_variance[pc_a] + explained_variance[pc_b]
+
+      # Create a circle plot in the mirrored position
+      circle_plot <- ggplot(data.frame(x = 1, y = 1, size = total_variance, label = paste0(round(total_variance * 100, 1), "%"))) +
+        geom_point(aes(x = x, y = y, size = size), shape = 21, fill = "blue", color = "black") +
+        scale_size_continuous(
+          range = c(1, 20),  # Adjust the range for circle sizes
+          limits = c(0, 1)   # Ensure variance scales from 0 to 1
+        ) +
+        geom_text(
+          aes(x = x, y = y + 0.75, label = label),
+          size = 4,  # Adjust text size
+          color = "black"  # Set text color for visibility
+        ) +
+        theme_void() + theme(legend.position = "none") + 
+        coord_cartesian(clip = "off") + 
+        ylim(0, 1.75)
+            
+      # Insert circle in mirrored position
+      full_grid[[pc_b, pc_a]] <- circle_plot
+    }
+  
+    return(full_grid)
+  }
+
+  # Create full plot grid
+  full_plot_grid <- create_full_plot_grid(plot_list, num_pcs, explained_variance, plot_combinations)
+
+  # Create combined plot
+  combined_plot <- ggdraw() +
+    draw_plot(
+      plot_grid(
+        plotlist = as.list(full_plot_grid[, num_pcs:1]),
+        ncol = num_pcs,
+        nrow = num_pcs,
+        align = 'none',
+        axis = 'tblr'
+      ),
+      x = 0.05,     # Move plot right
+      y = 0.05,     # Move plot up
+      width = 0.9, # Adjust plot width
+      height = 0.9 # Adjust plot height
+    ) +
+    # Add shared x-axis principal component label
+    draw_label(
+      "PC",
+      x = 0.5,
+      y = 0.02,
+      size = 10
+    ) +
+    # Add shared y-axis principal component label
+    draw_label(
+      "PC",
+      x = 0.02,
+      y = 0.5,
+      angle = 90,
+      size = 10
+    )
+
+  # Add x-axis tick labels at precise coordinates
+  for (i in seq_len(num_pcs)) {
+    x_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9  # Adjust x position relative to plot width
+    combined_plot <- combined_plot +
+      draw_label(
+        as.character(i),
+        x = x_pos,
+        y = 0.04,
+        size = 10
+      )
+  }
+
+  # Add y-axis tick labels at precise coordinates
+  for (i in seq_len(num_pcs)) {
+    y_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9  # Adjust y position relative to plot height
+    combined_plot <- combined_plot +
+      draw_label(
+        as.character(i),
+        x = 0.04,
+        y = y_pos,
+        angle = 90,
+        size = 10
+      )
+  }
+  # Add legend
+  combined_plot <- combined_plot +
+    draw_plot(
+      ggplot() +
+        geom_point(
+          aes(x = 1, y = 0.5, color = "Original"),
+          size = 3, alpha = 0
+        ) +
+        geom_point(
+          aes(x = 2, y = 0.5, color = "New"),
+          size = 3, alpha = 0
+        ) +
+        scale_color_manual(
+          values = c("Original" = "grey", "New" = "red")
+        ) +
+        theme_void() +
+        theme(
+          legend.position = "bottom",
+          legend.title = element_blank()
+        ) +
+        guides(
+          color = guide_legend(override.aes = list(size = 5, alpha = 1))
+        ),
+      x = 0.4,
+      y = 0.95,
+      width = 0.2,
+      height = 0.05
+    )
+
+  return(combined_plot)
+}
+```
+
 ```{r}
 target_plot <- diagnostic_pca_all_against_all(
   result_pca,

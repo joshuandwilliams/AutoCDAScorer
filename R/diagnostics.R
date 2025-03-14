@@ -187,7 +187,6 @@ pca_transform_python <- function(data, pca = NULL) {
 
   np <- reticulate::import("numpy")
   sklearn_decomposition <- reticulate::import("sklearn.decomposition")
-
   if (is.null(pca) || !"pca" %in% names(pca) || !inherits(pca$pca, "sklearn.decomposition._base._BasePCA")) {
     stop("Error: 'pca' must be a list containing a 'PCA' object under the 'pca' element from scikit-learn.")
   }
@@ -472,7 +471,7 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
 #' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
 #' @export
 diagnostic_pca_all_against_all <- function(pca, new_features, num_pcs, plot_type, num_ellipses = 3, num_bins = 3) {
-  original_features <- pca$original_features
+  original_features <- pca$features_pca
   explained_variance <- pca$explained_variance
 
   # Input validation
@@ -519,23 +518,44 @@ diagnostic_pca_all_against_all <- function(pca, new_features, num_pcs, plot_type
     }
   })
 
-  # Create full plot grid with all positions
-  create_full_plot_grid <- function(plot_list, num_pcs) {
-    # Create a matrix of size num_pcs x num_pcs
+  create_full_plot_grid <- function(plot_list, num_pcs, explained_variance, plot_combinations) {
     full_grid <- matrix(list(NULL), nrow = num_pcs, ncol = num_pcs)
 
-    # Fill in the plots based on their PC combinations
     for (i in seq_len(nrow(plot_combinations))) {
       pc_a <- plot_combinations[i, "PC_a"]
       pc_b <- plot_combinations[i, "PC_b"]
+
+      # Insert the scatter plot in the original position
       full_grid[[pc_a, pc_b]] <- plot_list[[i]]
+
+      # Compute explained variance sum
+      total_variance <- explained_variance[pc_a] + explained_variance[pc_b]
+
+      # Create a circle plot in the mirrored position
+      circle_plot <- ggplot(data.frame(x = 1, y = 1, size = total_variance, label = paste0(round(total_variance * 100, 1), "%"))) +
+        geom_point(aes(x = x, y = y, size = size), shape = 21, fill = "blue", color = "black") +
+        scale_size_continuous(
+          range = c(1, 20),  # Adjust the range for circle sizes
+          limits = c(0, 1)   # Ensure variance scales from 0 to 1
+        ) +
+        geom_text(
+          aes(x = x, y = y + 0.75, label = label),
+          size = 4,  # Adjust text size
+          color = "black"  # Set text color for visibility
+        ) +
+        theme_void() + theme(legend.position = "none") +
+        coord_cartesian(clip = "off") +
+        ylim(0, 1.75)
+
+      # Insert circle in mirrored position
+      full_grid[[pc_b, pc_a]] <- circle_plot
     }
 
     return(full_grid)
   }
 
   # Create full plot grid
-  full_plot_grid <- create_full_plot_grid(plot_list, num_pcs)
+  full_plot_grid <- create_full_plot_grid(plot_list, num_pcs, explained_variance, plot_combinations)
 
   # Create combined plot
   combined_plot <- ggdraw() +

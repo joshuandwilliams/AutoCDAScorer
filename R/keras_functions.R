@@ -89,7 +89,7 @@ extract_features <- function(model = "base_cnn", images) {
 #'
 #' @export
 predict_score <- function(model = "base_cnn", data, softmax = FALSE) {
-  images = dataset$images
+  images = data$images
 
   if (is.character(model)) {
     model <- load_cda_model(model)
