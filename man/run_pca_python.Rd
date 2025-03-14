@@ -2,23 +2,22 @@
 % Please edit documentation in R/diagnostics.R
 \name{run_pca_python}
 \alias{run_pca_python}
-\title{Perform Principal Component Analysis (PCA) using Python}
+\title{Perform PCA in Python}
 \usage{
-run_pca_python(dataset, n_components = 10)
+run_pca_python(data, n_components = 10)
 }
 \arguments{
-\item{dataset}{A list containing an \code{images} element, which is a 3D array (e.g., \link{samples, height, width}).}
+\item{data}{An array of extracted features or a list containing an array of images.}
 
-\item{n_components}{An integer specifying the number of principal components to retain (default: 10).}
+\item{n_components}{Integer. The number of principal components to retain. Default is 10.}
 }
 \value{
 A list containing:
-\item{pca_model}{The trained PCA model from \code{sklearn.decomposition.PCA}.}
-\item{original_features}{The dataset transformed into the principal component space.}
+\item{pca}{The trained PCA model from \code{sklearn.decomposition.PCA}.}
+\item{features_pca}{The dataset transformed into the principal component space.}
 \item{explained_variance}{Proportion of variance explained by each principal component.}
 \item{principal_components}{The principal component vectors.}
 }
 \description{
-This function applies PCA to a dataset using Python's \code{sklearn.decomposition.PCA}.
-It returns the trained PCA model, transformed features, explained variance, and principal components.
+This function applies Principal Component Analysis (PCA) to pixel values or extracted features.
 }

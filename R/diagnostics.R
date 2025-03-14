@@ -1,170 +1,218 @@
-#' Perform PCA on Extracted Features
+#' Perform PCA
 #'
-#' This function applies Principal Component Analysis (PCA) to extracted image features,
-#' reducing their dimensionality. Optionally, it can save the PCA model as an RDS file.
+#' This function applies Principal Component Analysis (PCA) to pixel values or extracted features.
+#' Optionally, it can save the PCA model as an RDS file.
 #'
-#' @param features An array of extracted features (output from `extract_features()`).
-#' @param num_pcs Integer. The number of principal components to retain. Default is 10.
+#' @param data An array of extracted features or a list containing an array of images.
+#' @param n_components Integer. The number of principal components to retain. Default is 10.
 #' @param savepath Character. Optional file path to save the PCA model as an RDS file. Default is NULL.
 #'
 #' @return A list containing:
 #'   \item{pca}{A `prcomp` object containing the trained PCA model.}
 #'   \item{features_pca}{A matrix of transformed features after applying PCA.}
+#'   \item{explained_variance}{Proportion of variance explained by each principal component.}
+#'   \item{principal_components}{The principal component vectors.}
 #'
 #' @import stats
-#'
-#' @examples
-#' \dontrun{
-#' features <- extract_features(model, images)
-#' pca_result <- run_pca(features, num_pcs = 10, savepath = "pca_model.rds")
-#' }
+#' @import gmodels
 #'
 #' @export
-run_pca <- function(features, num_pcs = 10, savepath = NULL) {
-  # Error handling: Ensure input is numeric (not matrix)
-  if (!is.numeric(features)) {
-    stop("Error: 'features' must be numeric (e.g., a numeric array or vector).")
+run_pca <- function(data, n_components = 10, savepath = NULL) {
+  if (is.list(data)){
+    if (!"images" %in% names(data)) {
+      stop("Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+    }
+    features <- data$images
+    if (length(dim(features)) != 4) {
+      stop("Error: data$images must be a 4D array with dimensions (batch, height, width, channels).")
+    }
+  } else if (is.numeric(data)) {
+    features <- data
+  } else {
+    stop("Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.")
   }
-
-  # Check if num_pcs is greater than the number of features in the dataset
-  if (num_pcs > length(features)) {
-    stop("Error: 'num_pcs' cannot be greater than the number of features in the input data.")
-  }
-
-  # If features is a 4D array (e.g., images), we need to reshape it
   if (length(dim(features)) == 4) {
-    # Flatten 4D array into 2D (flattening the batch dimension)
+    # Flatten to 2D (n_images, height * width * channels)
     features_matrix <- matrix(features, nrow = dim(features)[1], ncol = prod(dim(features)[2:4]))
   } else {
-    # If it's already a 2D numeric array, use it directly
     features_matrix <- as.matrix(features)
   }
+  if (n_components > ncol(features_matrix)) {
+    stop("Error: 'n_components' cannot be greater than the number of features in the input data.")
+  }
 
-  print(dim(features_matrix))
-  # Perform PCA
   pca <- gmodels::fast.prcomp(features_matrix, center = TRUE, scale. = FALSE, retx = TRUE)
+  features_pca <- pca$x[, 1:n_components]
+  explained_variance <- (pca$sdev^2) / sum(pca$sdev^2)
+  principal_components <- pca$rotation
 
-  # Extract the desired number of principal components
-  original_features <- pca$x[, 1:num_pcs]
-
-  # Save PCA model if savepath is provided
   if (!is.null(savepath)) {
     saveRDS(pca, file = savepath)
   }
 
-  return(list(pca = pca, original_features = original_features))
+  return(list(pca = pca,
+              features_pca = features_pca,
+              explained_variance = explained_variance[1:n_components],
+              principal_components = principal_components[, 1:n_components]))
 }
 
-
-#' Apply a pre-trained PCA transformation to new features
+#' Perform PCA in Python
 #'
-#' This function applies a previously trained PCA model to a new set of features without modifying the PCA itself.
+#' This function applies Principal Component Analysis (PCA) to pixel values or extracted features.
 #'
-#' @param pca A prcomp object containing the trained PCA model.
-#' @param features An array of new features to transform.
-#' @return A matrix of PCA-transformed features.
-#'
-#' @import stats
-#'
-#' @examples
-#' \dontrun{
-#' pca_model <- prcomp(existing_images, center = TRUE, scale. = TRUE)
-#' transformed_images <- pca_transform_images(pca_model, new_images)
-#' }
-pca_transform_features <- function(pca, features) {
-  # Check if pca is a prcomp object
-  if (!inherits(pca, "prcomp")) {
-    stop("Error: 'pca' must be a prcomp object.")
-  }
-
-  # Check if features is a matrix
-  # Error handling: Ensure input is numeric (not matrix)
-  if (!is.numeric(features)) {
-    stop("Error: 'features' must be numeric (e.g., a numeric array or vector).")
-  }
-
-  # Check if the number of columns in features matches the PCA model
-  if (ncol(features) != ncol(pca$x)) {
-    stop("Error: 'features' must have the same number of columns as the PCA model.")
-  }
-
-  features_matrix <- matrix(features, nrow = dim(features)[1])
-  new_features <- gmodels::predict(pca, features_matrix)
-
-  return(new_features)
-}
-
-#' Perform Principal Component Analysis (PCA) using Python
-#'
-#' This function applies PCA to a dataset using Python's `sklearn.decomposition.PCA`.
-#' It returns the trained PCA model, transformed features, explained variance, and principal components.
-#'
-#' @param dataset A list containing an `images` element, which is a 3D array (e.g., [samples, height, width]).
-#' @param n_components An integer specifying the number of principal components to retain (default: 10).
+#' @param data An array of extracted features or a list containing an array of images.
+#' @param n_components Integer. The number of principal components to retain. Default is 10.
 #'
 #' @return A list containing:
-#'   \item{pca_model}{The trained PCA model from `sklearn.decomposition.PCA`.}
-#'   \item{original_features}{The dataset transformed into the principal component space.}
+#'   \item{pca}{The trained PCA model from `sklearn.decomposition.PCA`.}
+#'   \item{features_pca}{The dataset transformed into the principal component space.}
 #'   \item{explained_variance}{Proportion of variance explained by each principal component.}
 #'   \item{principal_components}{The principal component vectors.}
 #'
 #' @importFrom reticulate import
+#'
 #' @export
-run_pca_python <- function(dataset, n_components = 10) {
-  images = dataset$images
-  # Python libraries
+run_pca_python <- function(data, n_components = 10) {
+  # Check Python installation and environment
+  if (!reticulate::py_available(initialize = TRUE)) {
+    stop("Error: Python is not available. Please install Python and configure reticulate.")
+  }
+  if (!reticulate::py_module_available("numpy")) {
+    stop("Error: The 'numpy' module is not installed in the Python environment. Install it using 'pip install numpy'.")
+  }
+  if (!reticulate::py_module_available("sklearn.decomposition")) {
+    stop("Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
+  }
+
   np <- reticulate::import("numpy")
   sklearn_decomposition <- reticulate::import("sklearn.decomposition")
 
-  images_array <- np$array(images)  # Convert R data into numpy array
-  images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1))) # Reshape the array
+  if (is.list(data)){
+    if (!"images" %in% names(data)) {
+      stop("Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+    }
+    images <- data$images
+    if (length(dim(images)) != 4) {
+      stop("Error: data$images must be a 4D array with dimensions (batch, height, width, channels).")
+    }
+    images_array <- np$array(images)
+    images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1)))
+  } else if (is.numeric(data)) {
+    images_array <- np$array(as.matrix(data))
+  } else {
+    stop("Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.")
+  }
+  if (n_components > dim(images_array)[2]) {
+    stop("Error: 'n_components' cannot be greater than the number of features in the input data.")
+  }
 
-  # Create and fit the PCA model using Python
-  pca_model <- sklearn_decomposition$PCA(n_components=as.integer(floor(n_components)))
-  pca_model$fit(images_array)
+  pca <- sklearn_decomposition$PCA(n_components=as.integer(floor(n_components)))
+  pca$fit(images_array)
 
-  # Get the principal components
-  principal_components <- pca_model$components_
+  features_pca <- pca$transform(images_array)
+  explained_variance <- pca$explained_variance_ratio_
+  principal_components <- pca$components_
 
-  # Get the transformed data (projected into principal components)
-  transformed_data <- pca_model$transform(images_array)
-
-  # Get variance explained by each component
-  explained_variance_ratio <- pca_model$explained_variance_ratio_
-
-  # Return the PCA model, transformed features, and explained variance
-  return(list(pca_model = pca_model,
-              original_features = transformed_data,
-              explained_variance = explained_variance_ratio,
-              principal_components = principal_components))
+  return(list(pca = pca,
+              features_pca = features_pca,
+              explained_variance = explained_variance[1:n_components],
+              principal_components = principal_components[1:n_components]))
 }
 
-#' Transform New Data Using a Trained PCA Model
+#' Apply pre-trained PCA transformation to new data
 #'
-#' This function applies a previously trained PCA model to transform new dataset features.
+#' This function applies a previously trained PCA model to a new dataset without modifying the PCA itself.
 #'
-#' @param dataset A list containing an `images` element, which is a 3D array (e.g., [samples, height, width]).
+#' @param data An array of extracted features or a list containing an array of images.
+#' @param pca A list containing a prcomp pca object.
+#' @return A matrix of PCA-transformed features.
+#'
+#' @export
+pca_transform <- function(data, pca = NULL) {
+  if (is.null(pca) || !"pca" %in% names(pca) || !inherits(pca$pca, "prcomp")) {
+    stop("Error: 'pca' must be a list containing a 'prcomp' object under the 'pca' element.")
+  }
+  pca_model = pca$pca
+
+  if (is.list(data)){
+    if (!"images" %in% names(data)) {
+      stop("Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+    }
+    images <- data$images
+    if (length(dim(images)) != 4) {
+      stop("Error: data$images must be a 4D array with dimensions (batch, height, width, channels).")
+    }
+  } else if (is.numeric(data)) {
+    images <- data
+  } else {
+    stop("Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.")
+  }
+  if (length(dim(images)) == 4) {
+    # Flatten to 2D (n_images, height * width * channels)
+    features_matrix <- matrix(images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
+  } else {
+    features_matrix <- as.matrix(images)
+  }
+  if (ncol(features_matrix) != length(pca_model$center)) {
+    stop("Error: The number of features in 'data' (columns of 'features_matrix') must match the number of features the PCA model was trained on.")
+  }
+
+  new_features <- predict(pca_model, features_matrix)
+
+  return(new_features)
+}
+
+#' Apply pre-trained PCA transformation to new data using Python
+#'
+#' This function applies a previously trained PCA model to a new dataset without modifying the PCA itself.
+
+#' @param data An array of extracted features or a list containing an array of images.
 #' @param pca A list returned by `run_pca_python`, containing a trained PCA model.
-#'
-#' @return A matrix of transformed features in the principal component space.
+#' @return A matrix of PCA-transformed features.
 #'
 #' @importFrom reticulate import
+#'
 #' @export
-transform_features_python <- function(dataset, pca) {
-  images <- dataset$images
-  pca_model <- pca$pca_model
-  # Import numpy for array manipulation
+pca_transform_python <- function(data, pca = NULL) {
+  # Check Python installation and environment
+  if (!reticulate::py_available(initialize = TRUE)) {
+    stop("Error: Python is not available. Please install Python and configure reticulate.")
+  }
+  if (!reticulate::py_module_available("numpy")) {
+    stop("Error: The 'numpy' module is not installed in the Python environment. Install it using 'pip install numpy'.")
+  }
+  if (!reticulate::py_module_available("sklearn.decomposition")) {
+    stop("Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
+  }
+
   np <- reticulate::import("numpy")
+  sklearn_decomposition <- reticulate::import("sklearn.decomposition")
 
-  # Convert the new images into a numpy array
-  images_array <- np$array(images)
-  images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1))) # Reshape the array
+  if (is.null(pca) || !"pca" %in% names(pca) || !inherits(pca$pca, "sklearn.decomposition._base._BasePCA")) {
+    stop("Error: 'pca' must be a list containing a 'PCA' object under the 'pca' element from scikit-learn.")
+  }
+  pca_model <- pca$pca
 
-
-  # Use the PCA model to transform new features
+  if (is.list(data)){
+    if (!"images" %in% names(data)) {
+      stop("Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+    }
+    images <- data$images
+    if (length(dim(images)) != 4) {
+      stop("Error: data$images must be a 4D array with dimensions (batch, height, width, channels).")
+    }
+    images_array <- np$array(images)
+    images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1)))
+  } else if (is.numeric(data)) {
+    images_array <- np$array(as.matrix(data))
+  } else {
+    stop("Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.")
+  }
+  if (ncol(images_array) != length(pca_model$mean_)) {
+    stop("Error: The number of features in 'data' (columns of 'features_matrix') must match the number of features the PCA model was trained on.")
+  }
   transformed_data <- pca_model$transform(images_array)
 
-  # Return the transformed features
   return(transformed_data)
 }
 
@@ -270,7 +318,6 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
 #' @importFrom MASS kde2d
 #' @export
 pca_plot_with_density <- function(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_bins = 3) {
-  # Convert to data frames for plotting
   original_df <- data.frame(
     PC_a = original_features[, PC_a],
     PC_b = original_features[, PC_b],
@@ -283,21 +330,20 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
   )
   plot_data <- rbind(original_df, new_df)
 
-  # Get the explained variance for PC_a and PC_b
+  # Variance explained
   variance_a <- explained_variance[PC_a]
   variance_b <- explained_variance[PC_b]
 
-  # Compute density estimation using a KDE
+  # Density estimation (2D)
   kde <- MASS::kde2d(plot_data$PC_a, plot_data$PC_b, n = 100)
 
-  # Convert kde to data frame for contour plotting
+  # Convert to dataframe for plotting
   kde_df <- data.frame(
-    x = rep(kde$x, each = length(kde$y)),  # Keep x values consistent
-    y = rep(kde$y, times = length(kde$x)), # Keep y values consistent
-    z = as.vector(t(kde$z))                 # Transpose z to align with the correct axes
+    x = rep(kde$x, each = length(kde$y)),
+    y = rep(kde$y, times = length(kde$x)),
+    z = as.vector(t(kde$z))
   )
 
-  # Create the contour plot
   p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = Type)) +
     geom_point(alpha = 0.5, size = 0.5) +
     scale_color_manual(values = c("Original" = "grey", "New" = "red")) +
@@ -345,16 +391,16 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
   original_points <- data.frame(x = pc1_orig, y = pc2_orig)
   new_points <- data.frame(x = new_features[, PC_a], y = new_features[, PC_b])
 
-  # --- Convex Hull (on original points only, with jittering) ---
+  # Convex hull
   x_jittered <- original_points$x + runif(nrow(original_points), -jitter_amount, jitter_amount)
   y_jittered <- original_points$y + runif(nrow(original_points), -jitter_amount, jitter_amount)
   hull_indices <- chull(x_jittered, y_jittered)
   hull_points <- original_points[hull_indices, ]
 
-  # --- Delaunay Triangulation and Point-in-Hull Test ---
+  # Delaunay triangulation and point-in-hull tests
   unique_original_points <- unique(original_points)
 
-  # --- Plotting logic based on number of unique original points ---
+  # Plotting
   if (nrow(unique_original_points) < 3) {
     warning("Less than 3 unique original points. Cannot form a convex hull. Plotting all new points as outside.")
     plot_data <- data.frame(
@@ -369,14 +415,14 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
     unique_original_points <- as.matrix(unique_original_points)
     delaunay_tri <- delaunayn(unique_original_points, options = "Qt Qbb Qc Qz Q12")
 
-    # Point-in-Hull Test (for new points) - *FIXED*
+    # Point-in-hull test
     point_in_hull <- function(x_test, y_test) {
-      test_points <- as.matrix(data.frame(x = x_test, y = y_test)) # Convert to matrix!
+      test_points <- as.matrix(data.frame(x = x_test, y = y_test)) # Convert to matrix
       !is.na(tsearchn(unique_original_points, delaunay_tri, test_points)$idx)
     }
     inside <- point_in_hull(new_points$x, new_points$y)
 
-    # Data Frame for Plotting (inside the else block)
+    # Data frame for plotting
     original_df <- data.frame(PC_a = pc1_orig, PC_b = pc2_orig, Type = "Original")
     new_df <- data.frame(
       PC_a = new_points$x,
@@ -386,7 +432,6 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
     plot_data <- rbind(original_df, new_df)
   }
 
-  # --- Plotting with ggplot2 (only ONE plot) ---
   p <- ggplot(plot_data, aes(x = PC_a, y = PC_b)) +
     geom_point(data = subset(plot_data, Type == "Original"), color = "grey", alpha = 0.5, size = 0.5) +
     geom_point(data = subset(plot_data, Type %in% c("New (Inside)", "New (Outside)")),

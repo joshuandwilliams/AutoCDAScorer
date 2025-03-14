@@ -1,19 +1,18 @@
-#' Load a CSV file for AutoCDAScorer Dataframe
+#' Load CSV file in CDAScorer format
 #'
 #' This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", and "y2".
 #'
 #' @param filepath A string representing the path to the CSV file.
 #'
-#' @return A dataframe containing the data from the CSV file if it exists and contains the required columns.
+#' @return A dataframe containing the data from the CSV file.
 #'
-#' @examples
-#' \dontrun{
-#' df <- load_cdascorer_dataframe("path/to/data.csv")
-#' }
+#' @import readr
 #'
 #' @export
 load_cdascorer_dataframe <- function(filepath) {
-  if (!file.exists(filepath)) stop("File does not exist")
+  if (!file.exists(filepath)) {
+    stop("File does not exist")
+  }
 
   df <- readr::read_csv(filepath, show_col_types = FALSE)
 
@@ -26,33 +25,23 @@ load_cdascorer_dataframe <- function(filepath) {
 #' Load images and file names from a directory, with optional labels
 #'
 #' Loads all `.tif` images from the given directory, with the option to assign labels.
-#' If `labels = TRUE`, images are expected to be inside first-level subdirectories, and the
-#' subdirectory names are used as labels.
-#' If `labels = FALSE`, images are collected from both the main directory and first-level subdirectories,
-#' and no labels are assigned.
+#' If `labels = TRUE`, images are expected to be inside first-level subdirectories, and the subdirectory names are used as labels.
+#' If `labels = FALSE`, images are collected from both the main directory and first-level subdirectories, and no labels are assigned.
 #'
 #' @param data_dir A string specifying the directory containing images.
-#' @param image_size An integer specifying the size to which each image should be resized (width, height).
-#'                  Default is 64.
-#' @param labels A logical indicating whether to assign labels based on subdirectory names.
-#'               Default is TRUE.
+#' @param image_size An integer specifying the size to which each image should be resized (width, height). Default is 64.
+#' @param labels A logical indicating whether to assign labels based on subdirectory names. Default is FALSE.
 #'
 #' @return A list containing:
-#'   \item{images}{A 4D array of images}
+#'   \item{images}{A 4D array of images: n_images, height, width, channels}
 #'   \item{labels}{(Only if labels = TRUE) A vector of class labels corresponding to each image}
 #'   \item{filenames}{A vector of image file names}
 #'
 #' @import magick
 #' @importFrom fs dir_ls path_file
 #'
-#' @examples
-#' \dontrun{
-#' labeled_data <- load_images_and_labels("path/to/data", image_size=128, labels=TRUE)
-#' unlabeled_data <- load_images_and_labels("path/to/data", image_size=128, labels=FALSE)
-#' }
-#'
 #' @export
-load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
+load_images_and_labels <- function(data_dir, image_size = 64, labels = FALSE) {
   image_paths <- character()
   filenames <- character()
   image_labels <- character()
@@ -131,7 +120,7 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
   sprintf("%s images were loaded", length(images))
 
   image_labels <- as.numeric(image_labels)
-  images_array <- aperm(array(unlist(images), dim = c(image_size, image_size, 3, length(images))), c(4, 1, 2, 3))
+
   if (labels) {
     return(list(
       images = images_array,
@@ -157,9 +146,42 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = TRUE) {
 #' @import grid
 #' @export
 show_test_image <- function(dataset) {
+  if (!is.list(dataset)) {
+    stop("Error: dataset must be a list.")
+  }
+  if (is.null(dataset) || !"images" %in% names(dataset)) {
+    stop("Error: dataset must contain an 'images' element.")
+  }
+  if (length(dim(dataset$images)) != 4) {
+    stop("Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).")
+  }
+
   g <- rasterGrob(dataset$images[1,,,])
   grid.newpage()
   grid.draw(g)
+}
+
+#' Convert RGB to BGR
+#'
+#' This function takes a converts a 4D image array from RGB to BGR by reordering the color channels.
+#'
+#' @param dataset A dataset containing images, where images are stored in a 4D array, where the 4th dimension is RGB colour
+#'
+#' @return A dataset whose images have the same structure, but the color channels reordered to BGR.
+#'
+#' @export
+rgb_to_bgr <- function(dataset){
+  if (!is.list(dataset)) {
+    stop("Error: dataset must be a list.")
+  }
+  if (is.null(dataset) || !"images" %in% names(dataset)) {
+    stop("Error: dataset must contain an 'images' element.")
+  }
+  if (length(dim(dataset$images)) != 4) {
+    stop("Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).")
+  }
+
+  return(dataset$images[,,,c(3,2,1)])
 }
 
 save_cropped_images <- function(cdascorer, path) {
