@@ -1,4 +1,4 @@
-#' Load Keras model
+#' Load CDAScorer Keras Model
 #'
 #' This function loads a pre-trained Keras model from the `extdata` directory of the `AutoCDAScorer` package.
 #'
@@ -8,9 +8,6 @@
 #'
 #' @import keras3
 #' @importFrom fs path_package
-#'
-#' @examples
-#' model <- load_cda_model("base_cnn")
 #'
 #' @export
 load_cda_model <- function(model = "base_cnn") {
@@ -35,8 +32,7 @@ load_cda_model <- function(model = "base_cnn") {
 
 #' Extract features from the last pooling layer of a Keras model
 #'
-#' This function extracts features from the last pooling layer of the model
-#' for a set of images.
+#' This function extracts features from the last pooling layer of the model for a set of images.
 #'
 #' @param model A Keras model from which to extract features.
 #' @param images A 4D array of images (height, width, channels, num_images).
@@ -47,21 +43,15 @@ load_cda_model <- function(model = "base_cnn") {
 #' @export
 extract_features <- function(model = "base_cnn", images) {
   if (is.character(model)) {
-    model <- load_cda_model(model)  # Load the model by name
+    model <- load_cda_model(model)
   }
-  cat("Shape:", dim(images), "\nType:", class(images), "\n")
 
-  # Validate input images
   if (!is.array(images) || length(dim(images)) != 4) {
     stop("Error: 'images' must be a 4D array with dimensions (batch, height, width, channels).")
   }
 
-  cat("Shape:", dim(images), "\nType:", class(images), "\n")
-
-  # Find the last pooling layer in the model
   last_pooling_layer_name <- NULL
   for (layer in rev(model$layers)) {
-    # Check for any class containing 'MaxPooling2D', 'GlobalAveragePooling2D', or 'AveragePooling2D'
     if (any(grepl("MaxPooling2D", class(layer))) ||
         any(grepl("GlobalAveragePooling2D", class(layer))) ||
         any(grepl("AveragePooling2D", class(layer)))) {
@@ -70,7 +60,6 @@ extract_features <- function(model = "base_cnn", images) {
     }
   }
 
-  # Raise error if no pooling layer is found
   if (is.null(last_pooling_layer_name)) {
     stop("The model does not contain any pooling layers.")
   }
@@ -80,37 +69,36 @@ extract_features <- function(model = "base_cnn", images) {
     outputs = model$get_layer(last_pooling_layer_name)$output
   )
 
-  # Predict and extract features for each image
   features <- feature_extraction_model %>% predict(images)
 
   return(features)
 }
 
 
-#' Predict the score or class for a batch of images using a Keras model
+#' Predict the score for a batch of images using a CDAScorer Keras model
 #'
-#' This function returns either the raw softmax probabilities or the predicted class
-#' for a set of images.
+#' This function returns either the raw softmax probabilities or the predicted class for a set of images.
 #'
 #' @param model A Keras model used for making predictions.
-#' @param images A 4D array of images (height, width, channels, num_images).
-#' @param softmax A logical value indicating whether to return raw softmax values
-#'                (TRUE) or the predicted class index (FALSE). Default is TRUE.
+#' @param data A data list containing a 4D array of images (height, width, channels, num_images).
+#' @param softmax A boolean to return raw softmax values (TRUE) or the predicted class index (FALSE). Default is FALSE.
 #'
 #' @return A vector or matrix containing either the raw softmax values or the predicted class indices.
 #'
 #' @import keras3
+#'
 #' @export
-predict_score <- function(model = "base_cnn", images, softmax = TRUE) {
+predict_score <- function(model = "base_cnn", data, softmax = FALSE) {
+  images = dataset$images
+
   if (is.character(model)) {
-    model <- load_cda_model(model)  # Load the model by name
+    model <- load_cda_model(model)
   }
 
   if (!inherits(model, c("keras.models.models.model.Model", "keras.src.models.model.Model"))) {
     stop("Model is not a valid Keras model")
   }
 
-  # Get predictions from the model
   raw_scores <- model %>% predict(images)
 
   if (softmax) {
@@ -119,16 +107,4 @@ predict_score <- function(model = "base_cnn", images, softmax = TRUE) {
     predicted_classes <- as.integer(apply(raw_scores, 1, which.max) - 1)
     return(predicted_classes)
   }
-}
-
-#' Convert RGB to BGR
-#'
-#' This function takes a dataset containing images in RGB format and converts them to BGR format by reordering the color channels.
-#'
-#' @param dataset A dataset containing images, where images are stored in an array with dimensions `[n, m, 3]`, where the 3rd dimension represents the RGB color channels.
-#'
-#' @return A dataset with the same structure, but the color channels reordered to BGR.
-#' @export
-rgb_to_bgr <- function(dataset){
-  return(dataset$images[,,,c(3,2,1)])
 }

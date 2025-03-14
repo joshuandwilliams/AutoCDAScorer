@@ -1,168 +1,260 @@
-test_that("run_pca returns expected output structure", {
+test_that("run_pca valid input", {
   set.seed(123)
-  features <- matrix(runif(100 * 20), nrow = 100, ncol = 20)  # Simulated feature matrix
 
-  result <- run_pca(features, num_pcs = 5)
+  # Numeric
+  features <- matrix(runif(10 * 20), nrow = 10, ncol = 20)
+  features_result <- run_pca(features, n_components = 5)
+  expect_type(features_result, "list")
+  expect_named(features_result, c("pca", "features_pca", "explained_variance", "principal_components"))
+  expect_s3_class(features_result$pca, "prcomp")
+  expect_type(features_result$features_pca, "double")
+  expect_type(features_result$explained_variance, "double")
+  expect_type(features_result$principal_components, "double")
+  expect_equal(ncol(features_result$features_pca), 5)  # n_PCs
+  expect_equal(nrow(features_result$features_pca), 10) # n_samples
 
-  expect_type(result, "list")
-  expect_named(result, c("pca", "original_features"))
-  expect_s3_class(result$pca, "prcomp")
-  expect_type(result$original_features, "double")
+  # List containing images
+  data <- list(images = array(runif(10 * 64 * 64 * 3), dim = c(10, 64, 64, 3)))
+  list_result <- run_pca(features, n_components = 5)
+  expect_type(list_result, "list")
+  expect_named(list_result, c("pca", "features_pca", "explained_variance", "principal_components"))
+  expect_s3_class(list_result$pca, "prcomp")
+  expect_type(list_result$features_pca, "double")
+  expect_type(list_result$explained_variance, "double")
+  expect_type(list_result$principal_components, "double")
+  expect_equal(ncol(list_result$features_pca), 5)  # n_PCs
+  expect_equal(nrow(list_result$features_pca), 10) # n_samples
 })
 
-test_that("run_pca correctly reduces dimensionality", {
+test_that("run_pca n_components > n_features", {
   set.seed(123)
-  features <- matrix(runif(100 * 20), nrow = 100, ncol = 20)
+  features <- matrix(runif(50 * 10), nrow = 50, ncol = 10)
 
-  num_pcs <- 5
-  result <- run_pca(features, num_pcs = num_pcs)
-
-  expect_equal(ncol(result$pca$x), 20)  # Correct original number of PCs
-  expect_equal(ncol(result$original_features), 5)  # Correct number of PCs
-  expect_equal(nrow(result$original_features), 100) # Correct number of coordinates
+  expect_error(run_pca(features, n_components = 15), "Error: 'n_components' cannot be greater than the number of features in the input data.")
 })
 
-test_that("run_pca errors when num_pcs is greater than features", {
+test_that("run_pca save model", {
   set.seed(123)
-  features <- matrix(runif(50 * 10), nrow = 50, ncol = 10)  # 10 features only
-
-  expect_error(run_pca(features, num_pcs = 15), "Error: 'num_pcs' cannot be greater than the number of features in the input data.")
-})
-
-test_that("run_pca saves PCA model when savepath is provided", {
-  set.seed(123)
-  features <- matrix(runif(100 * 20), nrow = 100, ncol = 20)
+  features <- matrix(runif(10 * 20), nrow = 10, ncol = 20)
 
   temp_file <- tempfile(fileext = ".rds")
-  result <- run_pca(features, num_pcs = 5, savepath = temp_file)
+  result <- run_pca(features, n_components = 5, savepath = temp_file)
 
   expect_true(file.exists(temp_file))
   saved_pca <- readRDS(temp_file)
   expect_s3_class(saved_pca, "prcomp")
 
-  unlink(temp_file)  # Clean up
+  unlink(temp_file)
 })
 
-test_that("run_pca errors when input is not a matrix", {
-  expect_error(run_pca(list(1, 2, 3)), "Error: 'features' must be a matrix.")
-  expect_error(run_pca(data.frame(matrix(runif(100), nrow = 10))), "Error: 'features' must be a matrix.")
+test_that("run_pca invalid input", {
+  expect_error(run_pca(list(1, 2, 3)), "Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+  expect_error(run_pca("Test"), "Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.", fixed = TRUE)
 })
 
-test_that("pca_transform_features applies PCA transformation correctly", {
-  # Create a small test dataset
-  features <- matrix(runif(10 * 5), nrow = 10)  # 10 samples, 5 features
+test_that("run_pca_python valid input", {
+  set.seed(123)
 
-  # Create a PCA model using the test dataset
-  pca_model <- prcomp(features, center = TRUE, scale. = TRUE)
+  # Numeric input
+  features <- matrix(runif(10 * 20), nrow = 10, ncol = 20)
+  features_result <- run_pca_python(features, n_components = 5)
+  expect_type(features_result, "list")
+  expect_named(features_result, c("pca", "features_pca", "explained_variance", "principal_components"))
+  expect_true(inherits(features_result$pca, "python.builtin.object"))
+  expect_type(features_result$features_pca, "double")
+  expect_type(features_result$explained_variance, "double")
+  expect_type(features_result$principal_components, "double")
+  expect_equal(dim(features_result$features_pca), c(10, 5))  # n_samples, n_PCs
 
-  # Apply the PCA transformation to new features
-  transformed_features <- pca_transform_features(pca_model, features)
-
-  # Check that the returned object is a matrix
-  expect_true(is.matrix(transformed_features), info = "The result should be a matrix.")
-
-  # Check that the number of rows of transformed features matches the original features
-  expect_equal(nrow(transformed_features), nrow(features), info = "The number of rows should match the input.")
-
-  # Check that the number of columns of transformed features matches the number of principal components (num_pcs)
-  expect_equal(ncol(transformed_features), length(pca_model$sdev), info = "The number of columns should match the number of principal components.")
-
-  # Check that PCA transformation does not change the dimensionality of the features
-  expect_equal(ncol(transformed_features), length(pca_model$sdev), info = "Number of transformed features should match number of PCs in the PCA model.")
+  # List containing images
+  data <- list(images = array(runif(10 * 64 * 64 * 3 * 5), dim = c(10, 64, 64, 3)))
+  list_result <- run_pca_python(data, n_components = 5)
+  expect_type(list_result, "list")
+  expect_named(list_result, c("pca", "features_pca", "explained_variance", "principal_components"))
+  expect_true(inherits(list_result$pca, "python.builtin.object"))
+  expect_equal(dim(list_result$features_pca), c(10, 5))  # n_images, n_PCs
 })
 
-test_that("pca_transform_features handles invalid inputs", {
-  # Create a small test dataset
-  features <- matrix(runif(10 * 5), nrow = 10)
+test_that("run_pca_python n_components > n_features", {
+  set.seed(123)
+  features <- matrix(runif(50 * 10), nrow = 50, ncol = 10)
 
-  # Create a PCA model using the test dataset
-  pca_model <- prcomp(features, center = TRUE, scale. = TRUE)
-
-  # Test invalid PCA model (non-PCA object)
-  expect_error(pca_transform_features(NULL, features),
-               "Error: 'pca' must be a prcomp object.",
-               info = "Should raise an error if pca model is not a valid prcomp object.")
-
-  # Test invalid features (non-matrix)
-  expect_error(pca_transform_features(pca_model, NULL),
-               "Error: 'features' must be a matrix.",
-               info = "Should raise an error if features input is NULL.")
-
-  # Test features with invalid dimensions
-  invalid_features <- matrix(runif(3), nrow = 1)  # 1 row, invalid number of features
-  expect_error(pca_transform_features(pca_model, invalid_features),
-               "Error: 'features' must have the same number of columns as the PCA model.",
-              info = "Should raise an error if features' dimensions do not match.")
+  expect_error(run_pca_python(features, n_components = 15), "Error: 'n_components' cannot be greater than the number of features in the input data.")
 })
 
-test_that("diagnostic_pca_cloud generates a ggplot object", {
-  # Create example PCA-transformed data
-  set.seed(42)
-  original_features <- matrix(rnorm(100), ncol = 5)  # 20 samples, 5 PCs
-  new_features <- matrix(rnorm(100), ncol = 5)       # 20 samples, 5 PCs
-
-  # Call the function
-  p <- diagnostic_pca_cloud(original_features, new_features)
-
-  # Check if the output is a ggplot object
-  expect_true(inherits(p, "ggplot"), info = "The function should return a ggplot object.")
+test_that("run_pca_python invalid input", {
+  expect_error(run_pca_python(list(1, 2, 3)), "Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+  expect_error(run_pca_python("Test"), "Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.", fixed = TRUE)
 })
 
-test_that("diagnostic_pca_cloud handles invalid inputs", {
-  set.seed(42)
-  original_features <- matrix(rnorm(100), ncol = 5)
-  new_features <- matrix(rnorm(100), ncol = 5)
+test_that("run_pca_python python checks", {
+  # Python not available
+  mockery::stub(run_pca_python, "reticulate::py_available", FALSE)
+  expect_error(run_pca_python(matrix(runif(100), nrow = 10)),
+               "Error: Python is not available. Please install Python and configure reticulate.")
 
-  # Test empty input matrices
-  empty_matrix <- matrix(numeric(0), ncol = 0)
-  expect_error(diagnostic_pca_cloud(empty_matrix, new_features),
-               "Error: Input matrices cannot be empty.",
-               info = "Should raise an error if original_features is empty.")
+  # numpy not installed
+  mockery::stub(run_pca_python, "reticulate::py_available", TRUE)
+  mockery::stub(run_pca_python, "reticulate::py_module_available", function(module) {
+    if (module == "numpy") return(FALSE)
+    return(TRUE)
+  })
+  expect_error(run_pca_python(matrix(runif(100), nrow = 10)),
+               "Error: The 'numpy' module is not installed in the Python environment. Install it using 'pip install numpy'.")
 
-  expect_error(diagnostic_pca_cloud(original_features, empty_matrix),
-               "Error: Input matrices cannot be empty.",
-               info = "Should raise an error if new_features is empty.")
-
-  # Test mismatched dimensions
-  mismatched_features <- matrix(rnorm(80), ncol = 4)  # 4 PCs instead of 5
-  expect_error(diagnostic_pca_cloud(original_features, mismatched_features),
-               "Original and new features must have the same number of principal components.",
-               info = "Should raise an error if dimensions of original and new features do not match.")
-
-  # Test PC_a or PC_b out of range
-  expect_error(diagnostic_pca_cloud(original_features, new_features, PC_a = 6, PC_b = 2),
-               "PC_a or PC_b exceeds the number of available principal components.",
-               info = "Should raise an error if requested PC index is greater than available PCs.")
-
-  expect_error(diagnostic_pca_cloud(original_features, new_features, PC_a = 2, PC_b = 10),
-               "PC_a or PC_b exceeds the number of available principal components.",
-               info = "Should raise an error if PC_b is out of range.")
-
-  # Test invalid inputs (not matrices)
-  expect_error(diagnostic_pca_cloud(NULL, new_features),
-               "Error: Input matrices cannot be empty.",
-               info = "Should raise an error if original_features is NULL.")
-
-  expect_error(diagnostic_pca_cloud(original_features, NULL),
-               "Error: Input matrices cannot be empty.",
-               info = "Should raise an error if new_features is NULL.")
-
-  expect_error(diagnostic_pca_cloud(as.data.frame(original_features), new_features),
-               "Error: 'original_features' must be a matrix.",
-               info = "Should raise an error if original_features is not a matrix.")
-
-  expect_error(diagnostic_pca_cloud(original_features, as.data.frame(new_features)),
-               "Error: 'new_features' must be a matrix.",
-               info = "Should raise an error if new_features is not a matrix.")
+  # sci-kit learn not installed
+  mockery::stub(run_pca_python, "reticulate::py_available", TRUE)
+  mockery::stub(run_pca_python, "reticulate::py_module_available", function(module) {
+    if (module == "sklearn.decomposition") return(FALSE)
+    return(TRUE)
+  })
+  expect_error(run_pca_python(matrix(runif(100), nrow = 10)),
+               "Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
 })
 
-test_that("diagnostic_pca_cloud saves the plot correctly", {
-  set.seed(42)
-  original_features <- matrix(rnorm(100), ncol = 5)
-  new_features <- matrix(rnorm(100), ncol = 5)
+test_that("pca_transform valid input", {
+  # Dummy PCA
+  set.seed(123)
 
-  temp_file <- tempfile(fileext = ".png")
-  expect_silent(diagnostic_pca_cloud(original_features, new_features, save = temp_file))
-  expect_true(file.exists(temp_file), info = "The function should save a plot when a filename is provided.")
-  file.remove(temp_file)
+  list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
+  images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
+  #print(ncol(images_matrix)) # 192 pixels
+  #print(nrow(images_matrix)) # 10 samples
+
+  pca_model <- prcomp(images_matrix, center = TRUE, scale. = FALSE, rank. = 5)
+  #print(ncol(pca_model$x)) # 5 PCs
+  #print(nrow(pca_model$x)) # 10 samples
+
+  pca_list <- list(pca = pca_model)
+
+  # Numeric input
+  numeric_data <- matrix(runif(10 * 192), nrow = 10, ncol = 192)
+  features_transformed <- pca_transform(numeric_data, pca_list)
+  expect_type(features_transformed, "double")
+  expect_equal(nrow(features_transformed), 10)  # n_samples
+  expect_equal(ncol(features_transformed), 5) # n_PCs
+
+  # List containing images
+  list_transformed <- pca_transform(list_data, pca_list)
+  expect_type(list_transformed, "double")
+  expect_equal(nrow(list_transformed), 10)  # n_images
+  expect_equal(ncol(list_transformed), 5) # n_PCs
+})
+
+test_that("pca_transform invalid input", {
+  # Invalid list
+  list_data <- list(a = 1, b = 2)
+  pca_model <- prcomp(matrix(runif(100 * 20), nrow = 100, ncol = 20), center = TRUE, scale. = FALSE)
+  pca_list <- list(pca = pca_model)
+
+  expect_error(pca_transform(list_data, pca_list), "Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+
+  # Non-numeric and non-list
+  expect_error(pca_transform("Test", pca_list), "Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.", fixed = TRUE)
+
+  # Invalid PCA model
+  expect_error(pca_transform(list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))), "Error: 'pca' must be a list containing a 'prcomp' object under the 'pca' element.")
+})
+
+test_that("pca_transform new n_features != train n_features", {
+  # Dummy PCA
+  set.seed(123)
+  list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
+  images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
+
+  pca_model <- prcomp(images_matrix, center = TRUE, scale. = FALSE, rank. = 5)
+  pca_list <- list(pca = pca_model)
+  # Change dimensions
+  list_data$images <- array(runif(10 * 10 * 10 * 3), dim = c(10, 10, 10, 3))
+
+  # Ensure an error is thrown when feature dimensions don't match
+  expect_error(pca_transform(list_data, pca_list),
+               "Error: The number of features in 'data' (columns of 'features_matrix') must match the number of features the PCA model was trained on.", fixed=TRUE)
+})
+
+test_that("pca_transform_python valid input", {
+  set.seed(123)
+  list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
+  images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
+
+  # PCA model using scikit-learn
+  pca_model_py <- reticulate::import("sklearn.decomposition")$PCA(n_components = as.integer(floor(5)))
+  pca_model_py$fit(images_matrix)
+
+  pca_list_py <- list(pca = pca_model_py)
+
+  # Numeric input
+  numeric_data <- matrix(runif(10 * 192), nrow = 10, ncol = 192)
+  features_transformed_py <- pca_transform_python(pca_list_py, numeric_data)
+  expect_type(features_transformed_py, "double")
+  expect_equal(nrow(features_transformed_py), 10)  # n_samples
+  expect_equal(ncol(features_transformed_py), 5)   # n_PCs
+
+  # List containing images
+  list_transformed_py <- pca_transform_python(pca_list_py, list_data)
+  expect_type(list_transformed_py, "double")
+  expect_equal(nrow(list_transformed_py), 10)  # n_images
+  expect_equal(ncol(list_transformed_py), 5)   # n_PCs
+})
+
+test_that("pca_transform_python invalid input", {
+  set.seed(123)
+  list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
+  images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
+
+  # PCA model using scikit-learn
+  pca_model_py <- reticulate::import("sklearn.decomposition")$PCA(n_components = as.integer(floor(5)))
+  pca_model_py$fit(images_matrix)
+
+  pca_list_py <- list(pca = pca_model_py)
+
+  # List missing images
+  list_data_invalid <- list(a = 1, b = 2)
+  expect_error(pca_transform_python(list_data_invalid, pca_list_py), "Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+
+  # Non-numeric and non-list
+  expect_error(pca_transform_python("Test", pca_list_py), "Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.", fixed = TRUE)
+
+  # Invalid PCA model (not a valid object)
+  expect_error(pca_transform_python(list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))), "Error: 'pca' must be a list containing a 'PCA' object under the 'pca' element from scikit-learn.")
+})
+
+test_that("pca_transform_python new n_features != train n_features", {
+  set.seed(123)
+  list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
+  images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
+
+  # PCA model using scikit-learn
+  pca_model_py <- reticulate::import("sklearn.decomposition")$PCA(n_components = as.integer(floor(5)))
+  pca_model_py$fit(images_matrix)
+
+  pca_list_py <- list(pca = pca_model_py)
+
+  # Change the dimensions of images to trigger mismatch in features
+  list_data$images <- array(runif(10 * 10 * 10 * 3), dim = c(10, 10, 10, 3))
+
+  # Ensure an error is thrown when feature dimensions don't match
+  expect_error(pca_transform_python(list_data, pca_list_py), "Error: The number of features in 'data' (columns of 'features_matrix') must match the number of features the PCA model was trained on.", fixed = TRUE)
+})
+
+test_that("pca_transform_python python checks", {
+  # Python not available
+  mockery::stub(pca_transform_python, "reticulate::py_available", FALSE)
+  expect_error(pca_transform_python(matrix(runif(100), nrow = 10)), "Error: Python is not available. Please install Python and configure reticulate.")
+
+  # numpy not installed
+  mockery::stub(pca_transform_python, "reticulate::py_available", TRUE)
+  mockery::stub(pca_transform_python, "reticulate::py_module_available", function(module) {
+    if (module == "numpy") return(FALSE)
+    return(TRUE)
+  })
+  expect_error(pca_transform_python(matrix(runif(100), nrow = 10)), "Error: The 'numpy' module is not installed in the Python environment. Install it using 'pip install numpy'.")
+
+  # scikit-learn not installed
+  mockery::stub(pca_transform_python, "reticulate::py_available", TRUE)
+  mockery::stub(pca_transform_python, "reticulate::py_module_available", function(module) {
+    if (module == "sklearn.decomposition") return(FALSE)
+    return(TRUE)
+  })
+  expect_error(pca_transform_python(matrix(runif(100), nrow = 10)), "Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
 })
