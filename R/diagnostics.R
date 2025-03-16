@@ -69,7 +69,7 @@ run_pca <- function(data, n_components = 10, savepath = NULL) {
 #'   \item{explained_variance}{Proportion of variance explained by each principal component.}
 #'   \item{principal_components}{The principal component vectors.}
 #'
-#' @importFrom reticulate import
+#' @importFrom reticulate py_require
 #'
 #' @export
 run_pca_python <- function(data, n_components = 10) {
@@ -83,7 +83,6 @@ run_pca_python <- function(data, n_components = 10) {
   if (!reticulate::py_module_available("sklearn.decomposition")) {
     stop("Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
   }
-
   np <- reticulate::import("numpy")
   sklearn_decomposition <- reticulate::import("sklearn.decomposition")
 
@@ -170,7 +169,7 @@ pca_transform <- function(data, pca = NULL) {
 #' @param pca A list returned by `run_pca_python`, containing a trained PCA model.
 #' @return A matrix of PCA-transformed features.
 #'
-#' @importFrom reticulate import
+#' @importFrom reticulate py_require
 #'
 #' @export
 pca_transform_python <- function(data, pca = NULL) {
@@ -184,9 +183,9 @@ pca_transform_python <- function(data, pca = NULL) {
   if (!reticulate::py_module_available("sklearn.decomposition")) {
     stop("Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
   }
-
   np <- reticulate::import("numpy")
   sklearn_decomposition <- reticulate::import("sklearn.decomposition")
+
   if (is.null(pca) || !"pca" %in% names(pca) || !inherits(pca$pca, "sklearn.decomposition._base._BasePCA")) {
     stop("Error: 'pca' must be a list containing a 'PCA' object under the 'pca' element from scikit-learn.")
   }
@@ -274,7 +273,7 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
   }))
 
   # Create scatter plot
-  p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = Type)) +
+  p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
     geom_point(alpha = 0.5, size = 0.5) +
     scale_color_manual(values = c("Original" = "grey", "New" = "red")) +
     theme_minimal() +
@@ -289,7 +288,7 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
     ) +
     geom_path(
       data = ellipses_df,
-      aes(x = x, y = y, group = group),
+      aes(x = .data$x, y = .data$y, group = .data$group),
       inherit.aes = FALSE,
       color = "blue",
       linetype = "dashed"
@@ -343,7 +342,7 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
     z = as.vector(t(kde$z))
   )
 
-  p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = Type)) +
+  p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
     geom_point(alpha = 0.5, size = 0.5) +
     scale_color_manual(values = c("Original" = "grey", "New" = "red")) +
     theme_minimal() +
@@ -358,7 +357,7 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
     ) +
     geom_contour(
       data = kde_df,
-      aes(x = x, y = y, z = z),
+      aes(x = .data$x, y = .data$y, z = .data$z),
       color = "blue",
       bins = num_bins,
       linewidth = 0.5
@@ -393,7 +392,7 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
   # Convex hull
   x_jittered <- original_points$x + runif(nrow(original_points), -jitter_amount, jitter_amount)
   y_jittered <- original_points$y + runif(nrow(original_points), -jitter_amount, jitter_amount)
-  hull_indices <- chull(x_jittered, y_jittered)
+  hull_indices <- grDevices::chull(x_jittered, y_jittered)
   hull_points <- original_points[hull_indices, ]
 
   # Delaunay triangulation and point-in-hull tests
@@ -432,11 +431,11 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
   }
 
   p <- ggplot(plot_data, aes(x = PC_a, y = PC_b)) +
-    geom_point(data = subset(plot_data, Type == "Original"), color = "grey", alpha = 0.5, size = 0.5) +
-    geom_point(data = subset(plot_data, Type %in% c("New (Inside)", "New (Outside)")),
-               aes(color = Type), alpha = 0.5, size = 0.5) +
+    geom_point(data = subset(plot_data, .data$Type == "Original"), color = "grey", alpha = 0.5, size = 0.5) +
+    geom_point(data = subset(plot_data, .data$Type %in% c("New (Inside)", "New (Outside)")),
+               aes(color = .data$Type), alpha = 0.5, size = 0.5) +
     scale_color_manual(values = c("New (Inside)" = "green", "New (Outside)" = "red")) +
-    {if(nrow(hull_points) > 0) geom_polygon(data = hull_points, aes(x = x, y = y), fill = NA, color = "black", alpha = 0.5, linetype = "solid")} + # Conditional hull
+    {if(nrow(hull_points) > 0) geom_polygon(data = hull_points, aes(x = .data$x, y = .data$y), fill = NA, color = "black", alpha = 0.5, linetype = "solid")} +
     theme_minimal() +
     theme(
       axis.title = element_blank(),
@@ -533,13 +532,13 @@ diagnostic_pca_all_against_all <- function(pca, new_features, num_pcs, plot_type
 
       # Create a circle plot in the mirrored position
       circle_plot <- ggplot(data.frame(x = 1, y = 1, size = total_variance, label = paste0(round(total_variance * 100, 1), "%"))) +
-        geom_point(aes(x = x, y = y, size = size), shape = 21, fill = "blue", color = "black") +
+        geom_point(aes(x = .data$x, y = .data$y, size = .data$size), shape = 21, fill = "blue", color = "black") +
         scale_size_continuous(
           range = c(1, 20),  # Adjust the range for circle sizes
           limits = c(0, 1)   # Ensure variance scales from 0 to 1
         ) +
         geom_text(
-          aes(x = x, y = y + 0.75, label = label),
+          aes(x = .data$x, y = .data$y + 0.75, label = .data$label),
           size = 4,  # Adjust text size
           color = "black"  # Set text color for visibility
         ) +

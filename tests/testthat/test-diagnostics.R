@@ -53,6 +53,12 @@ test_that("run_pca invalid input", {
 })
 
 test_that("run_pca_python valid input", {
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE) &&
+      reticulate::py_module_available("numpy") &&
+      reticulate::py_module_available("sklearn.decomposition"),
+    "Python dependencies not available for testing"
+  )
   set.seed(123)
 
   # Numeric input
@@ -76,6 +82,12 @@ test_that("run_pca_python valid input", {
 })
 
 test_that("run_pca_python n_components > n_features", {
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE) &&
+      reticulate::py_module_available("numpy") &&
+      reticulate::py_module_available("sklearn.decomposition"),
+    "Python dependencies not available for testing"
+  )
   set.seed(123)
   features <- matrix(runif(50 * 10), nrow = 50, ncol = 10)
 
@@ -83,6 +95,13 @@ test_that("run_pca_python n_components > n_features", {
 })
 
 test_that("run_pca_python invalid input", {
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE) &&
+      reticulate::py_module_available("numpy") &&
+      reticulate::py_module_available("sklearn.decomposition"),
+    "Python dependencies not available for testing"
+  )
+
   expect_error(run_pca_python(list(1, 2, 3)), "Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
   expect_error(run_pca_python("Test"), "Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.", fixed = TRUE)
 })
@@ -92,7 +111,6 @@ test_that("run_pca_python python checks", {
   mockery::stub(run_pca_python, "reticulate::py_available", FALSE)
   expect_error(run_pca_python(matrix(runif(100), nrow = 10)),
                "Error: Python is not available. Please install Python and configure reticulate.")
-
   # numpy not installed
   mockery::stub(run_pca_python, "reticulate::py_available", TRUE)
   mockery::stub(run_pca_python, "reticulate::py_module_available", function(module) {
@@ -101,7 +119,6 @@ test_that("run_pca_python python checks", {
   })
   expect_error(run_pca_python(matrix(runif(100), nrow = 10)),
                "Error: The 'numpy' module is not installed in the Python environment. Install it using 'pip install numpy'.")
-
   # sci-kit learn not installed
   mockery::stub(run_pca_python, "reticulate::py_available", TRUE)
   mockery::stub(run_pca_python, "reticulate::py_module_available", function(module) {
@@ -173,7 +190,14 @@ test_that("pca_transform new n_features != train n_features", {
 })
 
 test_that("pca_transform_python valid input", {
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE) &&
+      reticulate::py_module_available("numpy") &&
+      reticulate::py_module_available("sklearn.decomposition"),
+    "Python dependencies not available for testing"
+  )
   set.seed(123)
+
   list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
   images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
 
@@ -198,7 +222,14 @@ test_that("pca_transform_python valid input", {
 })
 
 test_that("pca_transform_python invalid input", {
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE) &&
+      reticulate::py_module_available("numpy") &&
+      reticulate::py_module_available("sklearn.decomposition"),
+    "Python dependencies not available for testing"
+  )
   set.seed(123)
+
   list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
   images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
 
@@ -220,7 +251,14 @@ test_that("pca_transform_python invalid input", {
 })
 
 test_that("pca_transform_python new n_features != train n_features", {
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE) &&
+      reticulate::py_module_available("numpy") &&
+      reticulate::py_module_available("sklearn.decomposition"),
+    "Python dependencies not available for testing"
+  )
   set.seed(123)
+
   list_data <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
   images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
 

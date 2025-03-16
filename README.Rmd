@@ -15,7 +15,11 @@ knitr::opts_chunk$set(
 
 # AutoCDAScorer
 
+
 <!-- badges: start -->
+[![Codecov test coverage](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/branch/main/graph/badge.svg)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer)
+[![tensorflow version](https://img.shields.io/badge/tensorflow-v2.16.2-orange)](https://www.tensorflow.org/)
+[![python version](https://img.shields.io/badge/python-v3.11.11-blue)](https://www.python.org/)
 <!-- badges: end -->
 
 The goal of AutoCDAScorer is to make scoring cell death areas on UV spectra agroinfiltration images faster, more consistent, and less subjective.
