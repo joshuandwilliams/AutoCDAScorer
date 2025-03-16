@@ -40,7 +40,7 @@ jobs:
             libmagick++-dev
       - name: Install dependencies
         run: |
-          install.packages(c("covr", "devtools", "mockery")
+          install.packages(c("covr", "devtools", "mockery"))
         shell: Rscript {0}
       - name: Install AutoCDAScorer
         run: |
