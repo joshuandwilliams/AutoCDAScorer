@@ -144,6 +144,8 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = FALSE) {
 #' @return A visual output of the first image in the dataset.
 #'
 #' @import grid
+#' @importFrom grDevices dev.cur dev.off
+#'
 #' @export
 show_test_image <- function(dataset) {
   if (!is.list(dataset)) {
@@ -160,9 +162,9 @@ show_test_image <- function(dataset) {
     dev.off()
   }
 
-  g <- rasterGrob(dataset$images[1,,,])
-  grid.newpage()
-  grid.draw(g)
+  g <- grid::rasterGrob(dataset$images[1,,,])
+  grid::grid.newpage()
+  grid::grid.draw(g)
 }
 
 #' Convert RGB to BGR

@@ -4,12 +4,12 @@
 \alias{pca_transform_python}
 \title{Apply pre-trained PCA transformation to new data using Python}
 \usage{
-pca_transform_python(pca, data)
+pca_transform_python(data, pca = NULL)
 }
 \arguments{
-\item{pca}{A list returned by \code{run_pca_python}, containing a trained PCA model.}
-
 \item{data}{An array of extracted features or a list containing an array of images.}
+
+\item{pca}{A list returned by \code{run_pca_python}, containing a trained PCA model.}
 }
 \value{
 A matrix of PCA-transformed features.
