@@ -22,10 +22,14 @@ jobs:
           install.packages("covr")
         shell: Rscript {0}
 
-      - name: Run test coverage and upload to Codecov
+      - name: Run test coverage
         run: |
-          library(covr)
-          codecov()
+          covr::codecov()
         shell: Rscript {0}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+
