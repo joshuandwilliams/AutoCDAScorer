@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          install.packages("covr")
+          install.packages(c("devtools", "covr"))
         shell: Rscript {0}
 
       - name: Install your package
