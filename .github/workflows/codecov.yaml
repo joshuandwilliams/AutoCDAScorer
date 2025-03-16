@@ -37,7 +37,8 @@ jobs:
             libblas-dev \
             liblapack-dev \
             libopenblas-dev \
-            libfribidi-dev
+            libfribidi-dev \
+            libmagick++-dev
 
       - name: Install covr
         run: |
