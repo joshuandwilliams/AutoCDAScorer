@@ -36,7 +36,8 @@ jobs:
             libgmp-dev \
             libblas-dev \
             liblapack-dev \
-            libopenblas-dev
+            libopenblas-dev \
+            libfribidi=dev
 
       - name: Install covr
         run: |
