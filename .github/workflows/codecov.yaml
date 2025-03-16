@@ -9,14 +9,13 @@ on:
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
-
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -39,38 +38,25 @@ jobs:
             libopenblas-dev \
             libfribidi-dev \
             libmagick++-dev
-
-      - name: Install covr
+      - name: Install dependencies
         run: |
-          install.packages("covr")
-          library(covr)
+          install.packages(c("covr", "devtools", "mockery")
         shell: Rscript {0}
-
-      - name: Install devtools
-        run: |
-          install.packages("devtools")
-          library(devtools)
-        shell: Rscript {0}
-
-      - name: Install mockery
-        run: |
-          install.packages("mockery")
-          library(mockery)
-        shell: Rscript {0}
-
-      - name: Install package
+      - name: Install AutoCDAScorer
         run: |
           devtools::install()
         shell: Rscript {0}
-
-      - name: Run test coverage
+      - name: Generate coverage report
         run: |
-          covr::codecov()
+          coverage <- covr::package_coverage()
+          covr::to_lcov(coverage, filename = "coverage.lcov")
         shell: Rscript {0}
-
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.lcov
+          flags: unittests
+          name: R Package Coverage
 
 
