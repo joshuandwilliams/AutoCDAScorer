@@ -34,7 +34,6 @@ jobs:
       - name: Install package
         run: |
           devtools::install()
-
       - name: Run test coverage
         run: |
           covr::codecov()
