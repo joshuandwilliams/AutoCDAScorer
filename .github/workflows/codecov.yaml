@@ -26,6 +26,11 @@ jobs:
           install.packages("covr")
         shell: Rscript {0}
 
+      - name: Install your package
+        run: |
+          devtools::install()
+        shell: Rscript {0}
+
       - name: Run test coverage
         run: |
           covr::codecov()
