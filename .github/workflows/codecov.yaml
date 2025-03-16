@@ -34,7 +34,7 @@ jobs:
       - name: Install package
         run: |
           devtools::install()
-        shell: Rscript{0}
+        shell: Rscript {0}
 
       - name: Run test coverage
         run: |
