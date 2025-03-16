@@ -52,6 +52,12 @@ jobs:
           library(devtools)
         shell: Rscript {0}
 
+      - name: Install mockery
+        run: |
+          install.packages("mockery")
+          library(mockery)
+        shell: Rscript {0}
+
       - name: Install package
         run: |
           devtools::install()
