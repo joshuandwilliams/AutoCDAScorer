@@ -233,7 +233,28 @@ pca_transform_python <- function(data, pca = NULL) {
 #' @import ggplot2
 #' @export
 pca_plot_with_target <- function(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_ellipses = 3) {
-  # Convert to data frames for plotting
+  if (!is.matrix(original_features) || nrow(original_features) == 0 || ncol(original_features) == 0)
+    stop("original_features must be a non-empty matrix")
+  if (!is.matrix(new_features) || nrow(new_features) == 0 || ncol(new_features) == 0)
+    stop("new_features must be a non-empty matrix")
+  if (!is.numeric(explained_variance) || length(explained_variance) == 0)
+    stop("explained_variance must be a non-empty numeric vector")
+
+  if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
+  if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
+  if (PC_a <= 0 || PC_a > num_pcs) stop("PC_a must be between 1 and num_pcs")
+  if (PC_b <= 0 || PC_b > num_pcs) stop("PC_b must be between 1 and num_pcs")
+
+  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
+  if (num_pcs <= 0) stop("num_pcs must be greater than 0")
+  if (!is.integer(num_ellipses) && !is.numeric(num_ellipses)) stop("num_ellipses must be an integer")
+  if (num_ellipses <= 0) stop("num_ellipses must be greater than 0")
+
+  PC_a <- as.integer(PC_a)
+  PC_b <- as.integer(PC_b)
+  num_pcs <- as.integer(num_pcs)
+  num_ellipses <- as.integer(num_ellipses)
+
   original_df <- data.frame(
     PC_a = original_features[, PC_a],
     PC_b = original_features[, PC_b],
@@ -246,17 +267,15 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
   )
   plot_data <- rbind(original_df, new_df)
 
-  # Get the explained variance for PC_a and PC_b
   variance_a <- explained_variance[PC_a]
   variance_b <- explained_variance[PC_b]
 
-  # Compute ellipse center and scaling factors
+  # Ellipse centre and scaling
   center_x <- median(plot_data$PC_a)
   center_y <- median(plot_data$PC_b)
   range_x <- diff(range(plot_data$PC_a)) / 2
   range_y <- diff(range(plot_data$PC_b)) / 2
 
-  # Function to create ellipse points
   ellipse_points <- function(center_x, center_y, width, height, level, n = 100) {
     t <- seq(0, 2 * pi, length.out = n)
     data.frame(
@@ -266,13 +285,11 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
     )
   }
 
-  # Generate ellipses data frame
   ellipses_df <- do.call(rbind, lapply(seq_len(num_ellipses), function(i) {
     scale_factor <- i / num_ellipses
     ellipse_points(center_x, center_y, scale_factor * range_x, scale_factor * range_y, i)
   }))
 
-  # Create scatter plot
   p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
     geom_point(alpha = 0.5, size = 0.5) +
     scale_color_manual(values = c("Original" = "grey", "New" = "red")) +
@@ -283,7 +300,7 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
       axis.ticks = element_blank(),
       legend.position = "none",
       panel.grid = element_blank(),
-      panel.border = element_rect(color = "black", fill = NA, size = 0.5),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
       plot.margin = unit(c(0, 0, 0, 0), "cm")
     ) +
     geom_path(
@@ -316,6 +333,23 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
 #' @importFrom MASS kde2d
 #' @export
 pca_plot_with_density <- function(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_bins = 3) {
+  if (!is.matrix(original_features) || nrow(original_features) == 0 || ncol(original_features) == 0)
+    stop("original_features must be a non-empty matrix")
+  if (!is.matrix(new_features) || nrow(new_features) == 0 || ncol(new_features) == 0)
+    stop("new_features must be a non-empty matrix")
+  if (!is.numeric(explained_variance) || length(explained_variance) == 0)
+    stop("explained_variance must be a non-empty numeric vector")
+
+  if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
+  if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
+  if (PC_a <= 0 || PC_a > num_pcs) stop("PC_a must be between 1 and num_pcs")
+  if (PC_b <= 0 || PC_b > num_pcs) stop("PC_b must be between 1 and num_pcs")
+
+  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
+  if (num_pcs <= 0) stop("num_pcs must be greater than 0")
+  if (!is.integer(num_bins) && !is.numeric(num_bins)) stop("num_bins must be an integer")
+  if (num_bins <= 0) stop("num_bins must be greater than 0")
+
   original_df <- data.frame(
     PC_a = original_features[, PC_a],
     PC_b = original_features[, PC_b],
@@ -328,11 +362,10 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
   )
   plot_data <- rbind(original_df, new_df)
 
-  # Variance explained
   variance_a <- explained_variance[PC_a]
   variance_b <- explained_variance[PC_b]
 
-  # Density estimation (2D)
+  # 2D Density estimation
   kde <- MASS::kde2d(plot_data$PC_a, plot_data$PC_b, n = 100)
 
   # Convert to dataframe for plotting
@@ -352,7 +385,7 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
       axis.ticks = element_blank(),
       legend.position = "none",
       panel.grid = element_blank(),
-      panel.border = element_rect(color = "black", fill = NA, size = 0.5),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
       plot.margin = unit(c(0, 0, 0, 0), "cm")
     ) +
     geom_contour(
@@ -375,14 +408,28 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
 #' @param new_features A matrix of new features transformed by PCA.
 #' @param PC_a An integer specifying the first principal component to plot (default: 1).
 #' @param PC_b An integer specifying the second principal component to plot (default: 2).
-#' @param jitter_amount A small numeric value to add jitter when computing the convex hull (default: 1e-10).
 #'
 #' @return A ggplot2 object representing the PCA scatter plot with a convex hull.
 #'
 #' @import ggplot2
+#' @import dplyr
 #' @importFrom geometry delaunayn tsearchn
+#'
 #' @export
-pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1, PC_b = 2, jitter_amount = 1e-10) {
+pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1, PC_b = 2) {
+  if (!is.matrix(original_features) || nrow(original_features) == 0 || ncol(original_features) == 0)
+    stop("original_features must be a non-empty matrix")
+  if (!is.matrix(new_features) || nrow(new_features) == 0 || ncol(new_features) == 0)
+    stop("new_features must be a non-empty matrix")
+
+  if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
+  if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
+  if (PC_a <= 0 || PC_a > ncol(original_features)) stop("PC_a must be between 1 and the number of columns of original_features")
+  if (PC_b <= 0 || PC_b > ncol(original_features)) stop("PC_b must be between 1 and the number of columns of original_features")
+
+
+  jitter_amount = 1e-10
+
   # --- Data Preparation ---
   pc1_orig <- original_features[, PC_a]
   pc2_orig <- original_features[, PC_b]
@@ -400,14 +447,7 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
 
   # Plotting
   if (nrow(unique_original_points) < 3) {
-    warning("Less than 3 unique original points. Cannot form a convex hull. Plotting all new points as outside.")
-    plot_data <- data.frame(
-      PC_a = c(pc1_orig, new_points$x),
-      PC_b = c(pc2_orig, new_points$y),
-      Type = c(rep("Original", length(pc1_orig)), rep("New (Outside)", nrow(new_points)))
-    )
-    hull_points <- data.frame(x=numeric(0), y=numeric(0)) # Empty hull
-
+    stop("Less than 3 unique original points. Cannot form a convex hull.")
   } else {
     # Ensure unique_original_points is a matrix
     unique_original_points <- as.matrix(unique_original_points)
@@ -430,10 +470,12 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
     plot_data <- rbind(original_df, new_df)
   }
 
-  p <- ggplot(plot_data, aes(x = PC_a, y = PC_b)) +
-    geom_point(data = subset(plot_data, .data$Type == "Original"), color = "grey", alpha = 0.5, size = 0.5) +
-    geom_point(data = subset(plot_data, .data$Type %in% c("New (Inside)", "New (Outside)")),
-               aes(color = .data$Type), alpha = 0.5, size = 0.5) +
+  original_data <- dplyr::filter(plot_data, .data$Type == "Original")
+  new_data <- dplyr::filter(plot_data, .data$Type %in% c("New (Inside)", "New (Outside)"))
+
+  p <- ggplot() +
+    geom_point(data = original_data, aes(x = PC_a, y = PC_b), color = "grey", alpha = 0.5, size = 0.5) +
+    geom_point(data = new_data, aes(x = PC_a, y = PC_b, color = .data$Type), alpha = 0.5, size = 0.5) +
     scale_color_manual(values = c("New (Inside)" = "green", "New (Outside)" = "red")) +
     {if(nrow(hull_points) > 0) geom_polygon(data = hull_points, aes(x = .data$x, y = .data$y), fill = NA, color = "black", alpha = 0.5, linetype = "solid")} +
     theme_minimal() +
@@ -443,7 +485,7 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
       axis.ticks = element_blank(),
       legend.position = "none",
       panel.grid = element_blank(),
-      panel.border = element_rect(color = "black", fill = NA, size = 0.5),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
       plot.margin = unit(c(0, 0, 0, 0), "cm")
     ) +
     labs(x = paste("PC", PC_a), y = paste("PC", PC_b))
@@ -469,7 +511,7 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
 #' @import ggplot2
 #' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
 #' @export
-diagnostic_pca_all_against_all <- function(pca, new_features, num_pcs, plot_type, num_ellipses = 3, num_bins = 3) {
+diagnostic_pca <- function(pca, new_features, num_pcs, plot_type, num_ellipses = 3, num_bins = 3) {
   original_features <- pca$features_pca
   explained_variance <- pca$explained_variance
 

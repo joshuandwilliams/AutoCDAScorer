@@ -193,3 +193,7 @@ rgb_to_bgr <- function(dataset){
 save_cropped_images <- function(cdascorer, path) {
   return(NULL)
 }
+
+annotations_to_csv <- function(images, predictions, path) {
+  return(NULL)
+}
