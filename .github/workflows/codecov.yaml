@@ -44,19 +44,18 @@ jobs:
         shell: Rscript {0}
       - name: Install AutoCDAScorer
         run: |
+          library(devtools)
           devtools::install()
         shell: Rscript {0}
-      - name: Generate coverage report
+      - name: Run package tests
         run: |
-          coverage <- covr::package_coverage()
-          covr::to_lcov(coverage, filename = "coverage.lcov")
+          library(devtools)
+          devtools::test()
         shell: Rscript {0}
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.lcov
-          flags: unittests
-          name: R Package Coverage
+      - name: Generate coverage report and upload to Codecov
+        run: |
+          library(covr)
+          covr::codecov(token = Sys.getenv("CODECOV_TOKEN"))
+        shell: Rscript {0}
 
 
