@@ -296,3 +296,116 @@ test_that("pca_transform_python python checks", {
   })
   expect_error(pca_transform_python(matrix(runif(100), nrow = 10)), "Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
 })
+
+generate_test_data <- function() {
+  set.seed(42)
+  list(
+    original_features = matrix(rnorm(100), ncol = 5),
+    new_features = matrix(rnorm(100), ncol = 5),
+    explained_variance = runif(5, 0, 1),
+    PC_a = 1,
+    PC_b = 2,
+    num_pcs = 5,
+    num_ellipses = 3,
+    num_bins = 3
+  )
+}
+
+test_that("pca_plot_with_target valid input", {
+  data <- generate_test_data()
+  p <- pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("pca_plot_with_target invalid input types", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_target("wrong_input", data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, "wrong_input", data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, "wrong_input", data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, "wrong_input", data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, "wrong_input"))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, -1, data$num_ellipses))
+})
+
+test_that("pca_plot_with_target invalid PCs", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, 0, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$num_pcs + 1, data$num_pcs, data$num_ellipses))
+})
+
+test_that("pca_plot_with_target invalid ellipses", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, -3))
+})
+
+test_that("pca_plot_with_target empty input matrices", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_target(matrix(numeric(0), ncol = 5), data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, matrix(numeric(0), ncol = 5), data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+})
+
+test_that("pca_plot_with_density valid input", {
+  data <- generate_test_data()
+  p <- pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_bins)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("pca_plot_with_density invalid input types", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_density("wrong_input", data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, "wrong_input", data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, "wrong_input", data$PC_a, data$PC_b, data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, "wrong_input", data$PC_b, data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, "wrong_input", data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, "wrong_input", data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, "wrong_input"))
+})
+
+test_that("pca_plot_with_density invalid PCs", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, 0, data$PC_b, data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$num_pcs + 1, data$num_pcs, data$num_bins))
+})
+
+test_that("pca_plot_with_density invalid num_bins", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, -3))
+})
+
+test_that("pca_plot_with_density empty input matrices", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_density(matrix(numeric(0), ncol = 5), data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, matrix(numeric(0), ncol = 5), data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_bins))
+})
+
+test_that("pca_plot_with_convex_hull valid input", {
+  data <- generate_test_data()
+  p <- pca_plot_with_convex_hull(data$original_features, data$new_features, data$PC_a, data$PC_b)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("pca_plot_with_convex_hull invalid input types", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_convex_hull("wrong_input", data$new_features, data$PC_a, data$PC_b))
+  expect_error(pca_plot_with_convex_hull(data$original_features, "wrong_input", data$PC_a, data$PC_b))
+  expect_error(pca_plot_with_convex_hull(data$original_features, data$new_features, "wrong_input", data$PC_b))
+  expect_error(pca_plot_with_convex_hull(data$original_features, data$new_features, data$PC_a, "wrong_input"))
+})
+
+test_that("pca_plot_with_convex_hull invalid PCs", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_convex_hull(data$original_features, data$new_features, 0, data$PC_b))
+  expect_error(pca_plot_with_convex_hull(data$original_features, data$new_features, data$PC_a, data$num_pcs + 1))
+})
+
+test_that("pca_plot_with_convex_hull empty input matrices", {
+  data <- generate_test_data()
+  expect_error(pca_plot_with_convex_hull(matrix(numeric(0), ncol = 5), data$new_features, data$PC_a, data$PC_b))
+  expect_error(pca_plot_with_convex_hull(data$original_features, matrix(numeric(0), ncol = 5), data$PC_a, data$PC_b))
+})
+
+test_that("pca_plot_with_convex_hull not enough unique points", {
+  data <- generate_test_data()
+  data$original_features <- matrix(rep(c(1, 2), each = 5), ncol = 2) # Less than 3 unique points
+  expect_error(pca_plot_with_convex_hull(data$original_features, data$new_features, data$PC_a, data$PC_b), "Less than 3 unique original points. Cannot form a convex hull.")
+})

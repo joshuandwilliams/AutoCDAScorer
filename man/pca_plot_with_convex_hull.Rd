@@ -4,13 +4,7 @@
 \alias{pca_plot_with_convex_hull}
 \title{Scatter Plot of PCA-Transformed Features with Convex Hull}
 \usage{
-pca_plot_with_convex_hull(
-  original_features,
-  new_features,
-  PC_a = 1,
-  PC_b = 2,
-  jitter_amount = 1e-10
-)
+pca_plot_with_convex_hull(original_features, new_features, PC_a = 1, PC_b = 2)
 }
 \arguments{
 \item{original_features}{A matrix of original features transformed by PCA.}
@@ -20,8 +14,6 @@ pca_plot_with_convex_hull(
 \item{PC_a}{An integer specifying the first principal component to plot (default: 1).}
 
 \item{PC_b}{An integer specifying the second principal component to plot (default: 2).}
-
-\item{jitter_amount}{A small numeric value to add jitter when computing the convex hull (default: 1e-10).}
 }
 \value{
 A ggplot2 object representing the PCA scatter plot with a convex hull.
