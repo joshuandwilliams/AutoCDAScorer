@@ -69,7 +69,7 @@ run_pca <- function(data, n_components = 10, savepath = NULL) {
 #'   \item{explained_variance}{Proportion of variance explained by each principal component.}
 #'   \item{principal_components}{The principal component vectors.}
 #'
-#' @importFrom reticulate py_require
+#' @importFrom reticulate py_available py_module_available import
 #'
 #' @export
 run_pca_python <- function(data, n_components = 10) {
@@ -169,7 +169,7 @@ pca_transform <- function(data, pca = NULL) {
 #' @param pca A list returned by `run_pca_python`, containing a trained PCA model.
 #' @return A matrix of PCA-transformed features.
 #'
-#' @importFrom reticulate py_require
+#' @importFrom reticulate py_available py_module_available import
 #'
 #' @export
 pca_transform_python <- function(data, pca = NULL) {

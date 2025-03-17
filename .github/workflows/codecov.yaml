@@ -55,6 +55,9 @@ jobs:
           library(devtools)
           devtools::install()
         shell: Rscript {0}
+      - name: Set reticulate Python path
+        run: |
+          r -e 'reticulate::use_python(Sys.which("python"))'
       - name: Run package tests
         run: |
           library(devtools)
