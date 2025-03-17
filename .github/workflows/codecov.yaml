@@ -55,13 +55,12 @@ jobs:
           library(devtools)
           devtools::install()
         shell: Rscript {0}
-      - name: Set reticulate Python path
-        run: |
-          r -e 'reticulate::use_python(Sys.which("python"))'
       - name: Run package tests
         run: |
           library(devtools)
           devtools::test()
+          library(reticulate)
+          reticulate::use_python(Sys.which("python"))
         shell: Rscript {0}
       - name: Generate coverage report and upload to Codecov
         run: |
