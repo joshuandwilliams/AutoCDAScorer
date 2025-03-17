@@ -74,7 +74,6 @@ extract_features <- function(model = "base_cnn", images) {
   return(features)
 }
 
-
 #' Predict the score for a batch of images using a CDAScorer Keras model
 #'
 #' This function returns either the raw softmax probabilities or the predicted class for a set of images.
