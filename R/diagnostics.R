@@ -13,7 +13,6 @@
 #'   \item{explained_variance}{Proportion of variance explained by each principal component.}
 #'   \item{principal_components}{The principal component vectors.}
 #'
-#' @import stats
 #' @import gmodels
 #'
 #' @export
@@ -126,6 +125,8 @@ run_pca_python <- function(data, n_components = 10) {
 #' @param pca A list containing a prcomp pca object.
 #' @return A matrix of PCA-transformed features.
 #'
+#' @importFrom stats predict
+#'
 #' @export
 pca_transform <- function(data, pca = NULL) {
   if (is.null(pca) || !"pca" %in% names(pca) || !inherits(pca$pca, "prcomp")) {
@@ -156,7 +157,7 @@ pca_transform <- function(data, pca = NULL) {
     stop("Error: The number of features in 'data' (columns of 'features_matrix') must match the number of features the PCA model was trained on.")
   }
 
-  new_features <- predict(pca_model, features_matrix)
+  new_features <- stats::predict(pca_model, features_matrix)
 
   return(new_features)
 }
@@ -164,7 +165,7 @@ pca_transform <- function(data, pca = NULL) {
 #' Apply pre-trained PCA transformation to new data using Python
 #'
 #' This function applies a previously trained PCA model to a new dataset without modifying the PCA itself.
-
+#'
 #' @param data An array of extracted features or a list containing an array of images.
 #' @param pca A list returned by `run_pca_python`, containing a trained PCA model.
 #' @return A matrix of PCA-transformed features.
@@ -231,6 +232,8 @@ pca_transform_python <- function(data, pca = NULL) {
 #' @return A ggplot2 object representing the PCA scatter plot with confidence ellipses.
 #'
 #' @import ggplot2
+#' @importFrom stats median
+#'
 #' @export
 pca_plot_with_target <- function(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_ellipses = 3) {
   if (!is.matrix(original_features) || nrow(original_features) == 0 || ncol(original_features) == 0)
@@ -271,8 +274,8 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
   variance_b <- explained_variance[PC_b]
 
   # Ellipse centre and scaling
-  center_x <- median(plot_data$PC_a)
-  center_y <- median(plot_data$PC_b)
+  center_x <- stats::median(plot_data$PC_a)
+  center_y <- stats::median(plot_data$PC_b)
   range_x <- diff(range(plot_data$PC_a)) / 2
   range_y <- diff(range(plot_data$PC_b)) / 2
 
@@ -412,7 +415,8 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
 #' @return A ggplot2 object representing the PCA scatter plot with a convex hull.
 #'
 #' @import ggplot2
-#' @import dplyr
+#' @importFrom dplyr filter
+#' @importFrom stats runif
 #' @importFrom geometry delaunayn tsearchn
 #'
 #' @export
@@ -437,8 +441,8 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
   new_points <- data.frame(x = new_features[, PC_a], y = new_features[, PC_b])
 
   # Convex hull
-  x_jittered <- original_points$x + runif(nrow(original_points), -jitter_amount, jitter_amount)
-  y_jittered <- original_points$y + runif(nrow(original_points), -jitter_amount, jitter_amount)
+  x_jittered <- original_points$x + stats::runif(nrow(original_points), -jitter_amount, jitter_amount)
+  y_jittered <- original_points$y + stats::runif(nrow(original_points), -jitter_amount, jitter_amount)
   hull_indices <- grDevices::chull(x_jittered, y_jittered)
   hull_points <- original_points[hull_indices, ]
 
@@ -512,25 +516,38 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
 #' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
 #' @export
 diagnostic_pca <- function(pca, new_features, num_pcs, plot_type, num_ellipses = 3, num_bins = 3) {
-  original_features <- pca$features_pca
-  explained_variance <- pca$explained_variance
-
-  # Input validation
-  if (length(original_features) == 0 || length(new_features) == 0) {
-    stop("Error: Input matrices cannot be empty.")
+  if (!is.list(pca) || !all(c("features_pca", "explained_variance") %in% names(pca))) {
+    stop("Error: 'pca' must be a list containing 'features_pca' and 'explained_variance'.")
   }
-  if (!is.matrix(original_features)) {
-    stop("Error: 'original_features' must be a matrix.")
+  if (!is.matrix(pca$features_pca)) {
+    stop("Error: 'pca$features_pca' must be a matrix.")
+  }
+  if (!is.numeric(pca$explained_variance) || length(pca$explained_variance) == 0) {
+    stop("Error: 'explained_variance' must be a numeric vector.")
   }
   if (!is.matrix(new_features)) {
     stop("Error: 'new_features' must be a matrix.")
   }
-  if (ncol(original_features) != ncol(new_features)) {
-    stop("Original and new features must have the same number of principal components.")
+  if (ncol(pca$features_pca) != ncol(new_features)) {
+    stop("Error: 'original_features' and 'new_features' must have the same number of principal components.")
   }
-  if (num_pcs > ncol(original_features)) {
-    stop("num_pcs exceeds the number of available principal components.")
+  if (!is.numeric(num_pcs) || num_pcs <= 1 || num_pcs > ncol(pca$features_pca)) {
+    stop("Error: 'num_pcs' must be a numeric value greater than 1 and less than or equal to the number of available principal components.")
   }
+  if (!is.character(plot_type) || !plot_type %in% c("target", "density", "convexhull")) {
+    stop("Error: 'plot_type' must be one of 'target', 'density', or 'convexhull'.")
+  }
+  if (!is.numeric(num_ellipses) || num_ellipses < 1) {
+    stop("Error: 'num_ellipses' must be a positive integer.")
+  }
+  if (!is.numeric(num_bins) || num_bins < 1) {
+    stop("Error: 'num_bins' must be a positive integer.")
+  }
+
+  pca_model = pca$pca
+
+  original_features <- pca$features_pca
+  explained_variance <- pca$explained_variance
 
   # Generate all possible PC combinations
   generate_pc_combinations <- function(num_pcs) {
@@ -599,9 +616,9 @@ diagnostic_pca <- function(pca, new_features, num_pcs, plot_type, num_ellipses =
   full_plot_grid <- create_full_plot_grid(plot_list, num_pcs, explained_variance, plot_combinations)
 
   # Create combined plot
-  combined_plot <- ggdraw() +
-    draw_plot(
-      plot_grid(
+  combined_plot <- cowplot::ggdraw() +
+    cowplot::draw_plot(
+      cowplot::plot_grid(
         plotlist = as.list(full_plot_grid[, num_pcs:1]),
         ncol = num_pcs,
         nrow = num_pcs,
@@ -614,14 +631,14 @@ diagnostic_pca <- function(pca, new_features, num_pcs, plot_type, num_ellipses =
       height = 0.9 # Adjust plot height
     ) +
     # Add shared x-axis principal component label
-    draw_label(
+    cowplot::draw_label(
       "PC",
       x = 0.5,
       y = 0.02,
       size = 10
     ) +
     # Add shared y-axis principal component label
-    draw_label(
+    cowplot::draw_label(
       "PC",
       x = 0.02,
       y = 0.5,
@@ -633,7 +650,7 @@ diagnostic_pca <- function(pca, new_features, num_pcs, plot_type, num_ellipses =
   for (i in seq_len(num_pcs)) {
     x_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9  # Adjust x position relative to plot width
     combined_plot <- combined_plot +
-      draw_label(
+      cowplot::draw_label(
         as.character(i),
         x = x_pos,
         y = 0.04,
@@ -645,7 +662,7 @@ diagnostic_pca <- function(pca, new_features, num_pcs, plot_type, num_ellipses =
   for (i in seq_len(num_pcs)) {
     y_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9  # Adjust y position relative to plot height
     combined_plot <- combined_plot +
-      draw_label(
+      cowplot::draw_label(
         as.character(i),
         x = 0.04,
         y = y_pos,
@@ -655,7 +672,7 @@ diagnostic_pca <- function(pca, new_features, num_pcs, plot_type, num_ellipses =
   }
   # Add legend
   combined_plot <- combined_plot +
-    draw_plot(
+    cowplot::draw_plot(
       ggplot() +
         geom_point(
           aes(x = 1, y = 0.5, color = "Original"),
