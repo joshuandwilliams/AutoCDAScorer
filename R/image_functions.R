@@ -114,11 +114,6 @@ crop_and_load_images <- function(cdascorer, image_size = 64, path = NULL) {
         save_dir <- file.path(path, as.character(score))
       }
 
-      # Ensure the directory exists
-      if (!fs::dir_exists(save_dir)) {
-        fs::dir_create(save_dir)
-      }
-
       # Save the cropped image
       magick::image_write(resized_image, file.path(save_dir, cropped_filename))
     }
@@ -292,10 +287,6 @@ show_test_image <- function(dataset) {
     stop("Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).")
   }
 
-  if (dev.cur() > 1) {
-    dev.off()
-  }
-
   g <- grid::rasterGrob(dataset$images[1,,,])
   grid::grid.newpage()
   grid::grid.draw(g)
@@ -337,6 +328,8 @@ rgb_to_bgr <- function(dataset){
 #' @param path The file path where the CSV file should be saved.
 #'
 #' @return Writes a CSV file with two columns: "filepath" and "prediction".
+#'
+#' @importFrom utils write.csv
 #'
 #' @export
 annotations_to_csv <- function(dataset, predictions, path) {

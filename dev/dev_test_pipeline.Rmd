@@ -25,7 +25,24 @@ original_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bul
 # Load new images
 new_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/bio_test", image_size=64, labels=TRUE)
 ```
+
 ```{r}
+show_test_image <- function(dataset) {
+  if (!is.list(dataset)) {
+    stop("Error: dataset must be a list.")
+  }
+  if (is.null(dataset) || !"images" %in% names(dataset)) {
+    stop("Error: dataset must contain an 'images' element.")
+  }
+  if (length(dim(dataset$images)) != 4) {
+    stop("Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).")
+  }
+
+  g <- grid::rasterGrob(dataset$images[1,,,])
+  grid::grid.newpage()
+  grid::grid.draw(g)
+}
+
 show_test_image(original_dataset)
 show_test_image(new_dataset)
 ```
