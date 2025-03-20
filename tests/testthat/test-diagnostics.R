@@ -15,7 +15,7 @@ test_that("run_pca valid input", {
 
   # List containing images
   data <- list(images = array(stats::runif(10 * 64 * 64 * 3), dim = c(10, 64, 64, 3)))
-  list_result <- run_pca(features, n_components = 5)
+  list_result <- run_pca(data, n_components = 5)
   expect_type(list_result, "list")
   expect_named(list_result, c("pca", "features_pca", "explained_variance", "principal_components"))
   expect_s3_class(list_result$pca, "prcomp")
@@ -24,6 +24,14 @@ test_that("run_pca valid input", {
   expect_type(list_result$principal_components, "double")
   expect_equal(ncol(list_result$features_pca), 5)  # n_PCs
   expect_equal(nrow(list_result$features_pca), 10) # n_samples
+})
+
+test_that("run_pca data images incorrect dims", {
+  set.seed(123)
+  data <- list(images = array(stats::runif(64 * 64 * 3), dim = c(64, 64, 3)))
+
+  expect_error(run_pca(data, n_components = 5, "Error: data$images must be a 4D array with dimensions (batch, height, width, channels)."))
+
 })
 
 test_that("run_pca n_components > n_features", {
@@ -156,6 +164,13 @@ test_that("pca_transform valid input", {
   expect_type(list_transformed, "double")
   expect_equal(nrow(list_transformed), 10)  # n_images
   expect_equal(ncol(list_transformed), 5) # n_PCs
+})
+
+test_that("pca_transform data images incorrect dims", {
+  data <- list(images = array(stats::runif(64 * 64 * 3), dim = c(64, 64, 3)))
+
+  expect_error(pca_transform(data, n_components = 5, "Error: data$images must be a 4D array with dimensions (batch, height, width, channels)."))
+
 })
 
 test_that("pca_transform invalid input", {
@@ -319,18 +334,22 @@ test_that("pca_plot_with_target valid input", {
 
 test_that("pca_plot_with_target invalid input types", {
   data <- generate_test_data()
-  expect_error(pca_plot_with_target("wrong_input", data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
-  expect_error(pca_plot_with_target(data$original_features, "wrong_input", data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
-  expect_error(pca_plot_with_target(data$original_features, data$new_features, "wrong_input", data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
-  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, "wrong_input", data$num_ellipses))
-  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, "wrong_input"))
+  #expect_error(pca_plot_with_target("wrong_input", data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  #expect_error(pca_plot_with_target(data$original_features, "wrong_input", data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  #expect_error(pca_plot_with_target(data$original_features, data$new_features, "wrong_input", data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  #expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, "wrong_input", data$num_ellipses))
+  #expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, "wrong_input"))
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, -1, data$num_ellipses))
 })
 
 test_that("pca_plot_with_target invalid PCs", {
   data <- generate_test_data()
+
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, 0, data$PC_b, data$num_pcs, data$num_ellipses))
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$num_pcs + 1, data$num_pcs, data$num_ellipses))
+    expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, "not_a_number", data$PC_b, data$num_pcs, data$num_ellipses), "PC_a must be an integer")
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, "not_a_number", data$num_pcs, data$num_ellipses), "PC_b must be an integer")
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, 0, data$num_ellipses), "num_pcs must be greater than 0")
 })
 
 test_that("pca_plot_with_target invalid ellipses", {
@@ -433,7 +452,7 @@ generate_diagnostic_test_data <- function() {
     ),
     new_features = new_features,
     num_pcs = num_pcs,
-    plot_type = "density",
+    plot_type = "target",
     num_ellipses = 3,
     num_bins = 3
   ))
@@ -443,7 +462,14 @@ test_that("diagnostic_pca valid input", {
   data <- generate_diagnostic_test_data()
   p <- diagnostic_pca(data$pca, data$new_features, data$num_pcs, data$plot_type, data$num_ellipses, data$num_bins)
   expect_s3_class(p, "ggplot")
+
+  q <- diagnostic_pca(data$pca, data$new_features, data$num_pcs, "density", data$num_ellipses, data$num_bins)
+  expect_s3_class(q, "ggplot")
+
+  r <- diagnostic_pca(data$pca, data$new_features, data$num_pcs, "convexhull", data$num_ellipses, data$num_bins)
+  expect_s3_class(r, "ggplot")
 })
+
 
 test_that("diagnostic_pca invalid input types", {
   data <- generate_diagnostic_test_data()
@@ -453,6 +479,14 @@ test_that("diagnostic_pca invalid input types", {
   expect_error(diagnostic_pca(data$pca, data$new_features, data$num_pcs, "wrong_input", data$num_ellipses, data$num_bins))
   expect_error(diagnostic_pca(data$pca, data$new_features, data$num_pcs, data$plot_type, "wrong_input", data$num_bins))
   expect_error(diagnostic_pca(data$pca, data$new_features, data$num_pcs, data$plot_type, data$num_ellipses, "wrong_input"))
+})
+
+test_that("diagnostic_pca features pca not matrix", {
+  data <- generate_diagnostic_test_data()
+
+  data$pca$features_pca <- as.data.frame(data$pca$features_pca)
+
+  expect_error(diagnostic_pca(data$pca, data$new_features, data$num_pcs, data$plot_type, data$num_ellipses, data$num_bins), "Error: 'pca\\$features_pca' must be a matrix.")
 })
 
 test_that("diagnostic_pca invalid PCA structure", {

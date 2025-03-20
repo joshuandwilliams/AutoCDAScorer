@@ -17,21 +17,6 @@ test_that("load_cdascorer_dataframe valid input", {
   expect_error(load_cdascorer_dataframe(temp_file), "Missing required columns")
 })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 test_that("crop_and_load_images valid input path labels", {
   temp_dir <- tempdir()
   image1_path <- file.path(temp_dir, "image1.png")
@@ -73,6 +58,39 @@ test_that("crop_and_load_images valid input path labels", {
   # Check if filenames match expected naming convention
   expect_true(file_exists(file.path(path, "1", "image1.png_1_1_1.tif")))
   expect_true(file_exists(file.path(path, "2", "image2.png_2_2_1.tif")))
+})
+
+test_that("crop_and_load_images creates score directories", {
+  temp_dir <- tempdir()
+  image1_path <- file.path(temp_dir, "image1.png")
+  image2_path <- file.path(temp_dir, "image2.png")
+
+  # Create dummy test images
+  image1 <- array(stats::runif(64*64*3), dim=c(64,64,3))
+  image2 <- array(stats::runif(64*64*3), dim=c(64,64,3))
+  png::writePNG(image1, image1_path)
+  png::writePNG(image2, image2_path)
+
+  # Create a mock cdascorer dataframe with score column
+  cdascorer <- data.frame(
+    img = c(image1_path, image2_path),
+    x1 = c(0, 10), x2 = c(50, 60), y1 = c(0, 10), y2 = c(50, 60),
+    row = c(1, 2), col = c(1, 2), pos = c(1, 1),
+    score = c(1, 2)
+  )
+
+  # Define output path and ensure it does NOT exist
+  path <- file.path(temp_dir, "test_score_directories")
+  if (dir_exists(path)) {
+    fs::dir_delete(path)  # Ensure fresh start
+  }
+
+  # Run function
+  crop_and_load_images(cdascorer, image_size = 64, path = path)
+
+  # Check that the score directories were created
+  expect_true(dir_exists(file.path(path, "1")))
+  expect_true(dir_exists(file.path(path, "2")))
 })
 
 test_that("crop_and_load_images valid input path no labels", {
@@ -155,6 +173,7 @@ test_that("crop_and_load_images single valid image", {
   # Ensure no labels field exists in the output (since no "score" column)
   expect_false("labels" %in% names(result))
 })
+
 test_that("crop_and_load_images missing columns", {
   temp_dir <- tempdir()
   image1_path <- file.path(temp_dir, "image1.png")
@@ -348,6 +367,10 @@ test_that("show_test_image invalid input", {
   # Incorrect dimensions
   dataset_wrong_shape <- list(images = matrix(1:10, nrow = 5))
   expect_error(show_test_image(dataset_wrong_shape), "Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).", fixed = TRUE)
+
+  # Not a list
+  dataset_not_list <- "not_list"
+  expect_error(show_test_image(dataset_not_list), "Error: dataset must be a list.")
 })
 
 test_that("rgb_to_bgr valid input", {
@@ -366,6 +389,10 @@ test_that("rgb_to_bgr invalid input", {
   # Incorrect dimensions
   dataset_wrong_shape <- list(images = matrix(1:10, nrow = 5))
   expect_error(rgb_to_bgr(dataset_wrong_shape), "Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).", fixed = TRUE)
+
+  # Not a list
+  dataset_not_list <- "not_list"
+  expect_error(rgb_to_bgr(dataset_not_list), "Error: dataset must be a list.")
 })
 
 test_that("annotations_to_csv valid vector predictions", {
@@ -402,4 +429,8 @@ test_that("annotations_to_csv invalid input", {
 
   predictions <- NULL
   expect_error(annotations_to_csv(dataset, predictions, tempfile()), "Error: predictions must be either an integer vector or a matrix.")
+
+  # Not a list
+  dataset_not_list <- "not_list"
+  expect_error(annotations_to_csv(dataset_not_list, predictions, tempfile()), "Error: dataset must be a list.")
 })

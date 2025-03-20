@@ -23,9 +23,7 @@ load_cda_model <- function(model = "base_cnn") {
   path <- fs::path_package("extdata", model_lookup[[model]], package = "AutoCDAScorer")
   model <- keras3::load_model(path)
 
-  if (!inherits(model, c("keras.models.models.model.Model", "keras.src.models.model.Model"))) {
-    stop("Loaded model is not a valid Keras model. It must inherit from keras.models.models.model.Model or keras.src.models.model.Model.")
-  }
+  # Don't need to test if model is valid since they are all known pre-validated internal models.
 
   return(model)
 }

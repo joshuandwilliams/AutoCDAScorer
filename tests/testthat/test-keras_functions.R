@@ -15,8 +15,8 @@ test_that("load_cda_model all", {
   expect_gt(length(model_named$layers), 0)
 
   # Test invalid name
-  expect_error(load_cda_model("non_existent_model"),
-               "Invalid model name. Available options: base_cnn")
+  expect_error(load_cda_model("non_existent_model"), "Invalid model name. Available options: base_cnn")
+
 })
 
 test_that("extract_features valid input", {
@@ -33,6 +33,12 @@ test_that("extract_features valid input", {
 
   # Check that features are non-empty
   expect_gt(prod(dim(features)), 0, label = "Features should not be empty")
+})
+
+test_that("extract_features images invalid dims", {
+  images <- array(stats::runif(64*64*3), dim = c(64, 64, 3))
+
+  expect_error(extract_features("base_cnn", images), "Error: 'images' must be a 4D array with dimensions (batch, height, width, channels).", fixed = TRUE)
 })
 
 test_that("extract_features no pooling layer", {
@@ -64,12 +70,10 @@ test_that("predict_score softmax", {
 })
 
 test_that("predict_score class", {
-  # Model and test data
-  model <- load_cda_model("base_cnn")
   data <- list(images = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
 
   # Get predictions
-  predicted_classes <- predict_score(model, data, softmax = FALSE)
+  predicted_classes <- predict_score("base_cnn", data, softmax = FALSE)
 
   # Check predictions dimensions, datatype, and range
   expect_true(is.integer(predicted_classes), info = "Predicted classes should be returned as integers")
