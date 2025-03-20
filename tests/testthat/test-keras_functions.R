@@ -21,7 +21,7 @@ test_that("load_cda_model all", {
 
 test_that("extract_features valid input", {
   # Random test images
-  images <- array(runif(5*64*64*3), dim = c(5, 64, 64, 3))
+  images <- array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3))
 
   # Extract features
   features <- extract_features("base_cnn", images)
@@ -42,7 +42,7 @@ test_that("extract_features no pooling layer", {
     layer_dense(units = 10, activation = "softmax")
 
   # Random test images
-  images <- array(runif(5*64*64*3), dim = c(5, 64, 64, 3))
+  images <- array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3))
 
   # Error due to missing pooling layer
   expect_error(extract_features(model_no_pooling, images), "The model does not contain any pooling layers.")
@@ -51,7 +51,7 @@ test_that("extract_features no pooling layer", {
 test_that("predict_score softmax", {
   # Model and test data
   model <- load_cda_model("base_cnn")
-  data <- list(images = array(runif(5*64*64*3), dim = c(5, 64, 64, 3)))
+  data <- list(images = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
 
   # Get softmax
   softmax_scores <- predict_score(model, data, softmax = TRUE)
@@ -66,7 +66,7 @@ test_that("predict_score softmax", {
 test_that("predict_score class", {
   # Model and test data
   model <- load_cda_model("base_cnn")
-  data <- list(images = array(runif(5*64*64*3), dim = c(5, 64, 64, 3)))
+  data <- list(images = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
 
   # Get predictions
   predicted_classes <- predict_score(model, data, softmax = FALSE)
@@ -80,7 +80,7 @@ test_that("predict_score class", {
 test_that("predict_score invalid model", {
   # Mock invalid model and test data
   invalid_model <- list(a = 1, b = 2, c = 3)
-  data <- list(images = array(runif(5*64*64*3), dim = c(5, 64, 64, 3)))
+  data <- list(images = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
 
   expect_error(predict_score(invalid_model, data), "Model is not a valid Keras model")
 })
