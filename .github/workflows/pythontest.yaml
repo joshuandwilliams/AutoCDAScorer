@@ -46,7 +46,7 @@ jobs:
 
       - name: Install reticulate in R
         run: |
-          install.packages(c("reticulate", "png")
+          install.packages("reticulate")
         shell: Rscript {0}
 
       - name: Test Python with Reticulate
