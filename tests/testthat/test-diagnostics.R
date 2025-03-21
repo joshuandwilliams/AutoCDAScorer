@@ -1,3 +1,33 @@
+# Check if Python is available
+if (!reticulate::py_available(initialize = TRUE)) {
+  message("Python is not available for testing.")
+  skip("Python is not available for testing.")
+}
+
+# Check if NumPy is installed
+if (!reticulate::py_module_available("numpy")) {
+  message("NumPy is not installed in the Python environment.")
+  skip("NumPy is not installed in the Python environment.")
+}
+
+# Check if scikit-learn is installed
+if (!reticulate::py_module_available("sklearn.decomposition")) {
+  message("scikit-learn is not installed in the Python environment.")
+  skip("scikit-learn is not installed in the Python environment.")
+}
+
+# Check if TensorFlow is installed
+if (!reticulate::py_module_available("tensorflow")) {
+  message("TensorFlow is not installed in the Python environment.")
+  skip("TensorFlow is not installed in the Python environment.")
+}
+
+# Check if Keras is installed
+if (!reticulate::py_module_available("keras")) {
+  message("Keras is not installed in the Python environment.")
+  skip("Keras is not installed in the Python environment.")
+}
+
 test_that("run_pca valid input", {
   set.seed(123)
 
