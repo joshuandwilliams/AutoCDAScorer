@@ -7,6 +7,12 @@ on:
     branches: [main, master]
 
 jobs:
+  disable-codecov:
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
   test-coverage:
     runs-on: ubuntu-latest
     env:

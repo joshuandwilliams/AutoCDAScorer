@@ -1,51 +1,36 @@
-# Where is Python installed?
-cat("Python Configuration:\n")
-cat(reticulate::py_config())
+test_that("Python environment configuration", {
 
-# Check Python installation
-cat("Checking if Python is available...\n")
-if (!reticulate::py_available(initialize = TRUE)) {
-  cat("Python is not available for testing.\n")
-  skip("Python is not available for testing.")
-} else {
-  cat("Python is available. Version: ", reticulate::py_config()$version, "\n")
-}
+  # Use the default Python interpreter
+  reticulate::use_python("python", required = TRUE)
 
-# Check if NumPy is installed
-cat("Checking if NumPy is available...\n")
-if (!reticulate::py_module_available("numpy")) {
-  cat("NumPy is not installed in the Python environment.\n")
-  skip("NumPy is not installed in the Python environment.")
-} else {
-  cat("NumPy is available. Version: ", reticulate::py_run_string("import numpy; print(numpy.__version__)"), "\n")
-}
+  # Print Python configuration (instead of cat())
+  print("Python Configuration:")
+  print(reticulate::py_config())  # This will print the config as a list
 
-# Check if scikit-learn is installed
-cat("Checking if scikit-learn is available...\n")
-if (!reticulate::py_module_available("sklearn.decomposition")) {
-  cat("scikit-learn is not installed in the Python environment.\n")
-  skip("scikit-learn is not installed in the Python environment.")
-} else {
-  cat("scikit-learn is available.\n")
-}
+  # Check Python availability
+  if (reticulate::py_available(initialize = TRUE)) {
+    print("Python is available.")
+  } else {
+    print("Python is NOT available.")
+  }
 
-# Check if TensorFlow is installed
-cat("Checking if TensorFlow is available...\n")
-if (!reticulate::py_module_available("tensorflow")) {
-  cat("TensorFlow is not installed in the Python environment.\n")
-  skip("TensorFlow is not installed in the Python environment.")
-} else {
-  cat("TensorFlow is available.\n")
-}
+  # Check if numpy is available
+  print("Checking numpy availability...")
+  if (reticulate::py_module_available("numpy")) {
+    print("Numpy is available.")
+  } else {
+    print("Numpy is NOT available.")
+  }
 
-# Check if Keras is installed
-cat("Checking if Keras is available...\n")
-if (!reticulate::py_module_available("keras")) {
-  cat("Keras is not installed in the Python environment.\n")
-  skip("Keras is not installed in the Python environment.")
-} else {
-  cat("Keras is available.\n")
-}
+  # Check if sklearn.decomposition is available
+  print("Checking sklearn.decomposition availability...")
+  if (reticulate::py_module_available("sklearn.decomposition")) {
+    print("sklearn.decomposition is available.")
+  } else {
+    print("sklearn.decomposition is NOT available.")
+  }
+
+})
 
 test_that("run_pca valid input", {
   set.seed(123)
