@@ -1,37 +1,3 @@
-test_that("Python environment configuration", {
-
-  # Use the default Python interpreter
-  reticulate::use_python("python", required = TRUE)
-
-  # Print Python configuration (instead of cat())
-  print("Python Configuration:")
-  print(reticulate::py_config())  # This will print the config as a list
-
-  # Check Python availability
-  if (reticulate::py_available(initialize = TRUE)) {
-    print("Python is available.")
-  } else {
-    print("Python is NOT available.")
-  }
-
-  # Check if numpy is available
-  print("Checking numpy availability...")
-  if (reticulate::py_module_available("numpy")) {
-    print("Numpy is available.")
-  } else {
-    print("Numpy is NOT available.")
-  }
-
-  # Check if sklearn.decomposition is available
-  print("Checking sklearn.decomposition availability...")
-  if (reticulate::py_module_available("sklearn.decomposition")) {
-    print("sklearn.decomposition is available.")
-  } else {
-    print("sklearn.decomposition is NOT available.")
-  }
-
-})
-
 test_that("run_pca valid input", {
   set.seed(123)
 
