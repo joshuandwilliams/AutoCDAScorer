@@ -167,9 +167,23 @@ test_that("pca_transform valid input", {
 })
 
 test_that("pca_transform data images incorrect dims", {
+  # Dummy PCA
+  set.seed(123)
+
+  list_data <- list(images = array(stats::runif(10 * 8 * 8 * 3), dim = c(10, 8, 8, 3)))
+  images_matrix <- matrix(list_data$images, nrow = dim(list_data$images)[1], ncol = prod(dim(list_data$images)[2:4]))
+  #print(ncol(images_matrix)) # 192 pixels
+  #print(nrow(images_matrix)) # 10 samples
+
+  pca_model <- stats::prcomp(images_matrix, center = TRUE, scale. = FALSE, rank. = 5)
+  #print(ncol(pca_model$x)) # 5 PCs
+  #print(nrow(pca_model$x)) # 10 samples
+
+  pca_list <- list(pca = pca_model)
+
   data <- list(images = array(stats::runif(64 * 64 * 3), dim = c(64, 64, 3)))
 
-  expect_error(pca_transform(data, n_components = 5, "Error: data$images must be a 4D array with dimensions (batch, height, width, channels)."))
+  expect_error(pca_transform(data, pca_list), "Error: data$images must be a 4D array with dimensions (batch, height, width, channels).", fixed=TRUE)
 
 })
 
@@ -334,11 +348,11 @@ test_that("pca_plot_with_target valid input", {
 
 test_that("pca_plot_with_target invalid input types", {
   data <- generate_test_data()
-  #expect_error(pca_plot_with_target("wrong_input", data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
-  #expect_error(pca_plot_with_target(data$original_features, "wrong_input", data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
-  #expect_error(pca_plot_with_target(data$original_features, data$new_features, "wrong_input", data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
-  #expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, "wrong_input", data$num_ellipses))
-  #expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, "wrong_input"))
+  expect_error(pca_plot_with_target("wrong_input", data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, "wrong_input", data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, "wrong_input", data$PC_a, data$PC_b, data$num_pcs, data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, "wrong_input", data$num_ellipses))
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, data$num_pcs, "wrong_input"))
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, -1, data$num_ellipses))
 })
 
@@ -347,7 +361,7 @@ test_that("pca_plot_with_target invalid PCs", {
 
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, 0, data$PC_b, data$num_pcs, data$num_ellipses))
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$num_pcs + 1, data$num_pcs, data$num_ellipses))
-    expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, "not_a_number", data$PC_b, data$num_pcs, data$num_ellipses), "PC_a must be an integer")
+  expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, "not_a_number", data$PC_b, data$num_pcs, data$num_ellipses), "PC_a must be an integer")
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, "not_a_number", data$num_pcs, data$num_ellipses), "PC_b must be an integer")
   expect_error(pca_plot_with_target(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$PC_b, 0, data$num_ellipses), "num_pcs must be greater than 0")
 })
@@ -384,6 +398,8 @@ test_that("pca_plot_with_density invalid PCs", {
   data <- generate_test_data()
   expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, 0, data$PC_b, data$num_pcs, data$num_bins))
   expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$num_pcs + 1, data$num_pcs, data$num_bins))
+  expect_error(pca_plot_with_density(data$original_features, data$new_features, data$explained_variance, data$PC_a, data$num_pcs, 0, data$num_bins))
+
 })
 
 test_that("pca_plot_with_density invalid num_bins", {
