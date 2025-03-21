@@ -244,15 +244,15 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
   if (!is.numeric(explained_variance) || length(explained_variance) == 0)
     stop("explained_variance must be a non-empty numeric vector")
 
+  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
   if (num_pcs <= 0) stop("num_pcs must be greater than 0")
+  if (!is.integer(num_ellipses) && !is.numeric(num_ellipses)) stop("num_ellipses must be an integer")
+  if (num_ellipses <= 0) stop("num_ellipses must be greater than 0")
+
   if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
   if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
   if (PC_a <= 0 || PC_a > num_pcs) stop("PC_a must be between 1 and num_pcs")
   if (PC_b <= 0 || PC_b > num_pcs) stop("PC_b must be between 1 and num_pcs")
-
-  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
-  if (!is.integer(num_ellipses) && !is.numeric(num_ellipses)) stop("num_ellipses must be an integer")
-  if (num_ellipses <= 0) stop("num_ellipses must be greater than 0")
 
   PC_a <- as.integer(PC_a)
   PC_b <- as.integer(PC_b)
@@ -344,15 +344,15 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
   if (!is.numeric(explained_variance) || length(explained_variance) == 0)
     stop("explained_variance must be a non-empty numeric vector")
 
+  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
   if (num_pcs <= 0) stop("num_pcs must be greater than 0")
+  if (!is.integer(num_bins) && !is.numeric(num_bins)) stop("num_bins must be an integer")
+  if (num_bins <= 0) stop("num_bins must be greater than 0")
+
   if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
   if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
   if (PC_a <= 0 || PC_a > num_pcs) stop("PC_a must be between 1 and num_pcs")
   if (PC_b <= 0 || PC_b > num_pcs) stop("PC_b must be between 1 and num_pcs")
-
-  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
-  if (!is.integer(num_bins) && !is.numeric(num_bins)) stop("num_bins must be an integer")
-  if (num_bins <= 0) stop("num_bins must be greater than 0")
 
   original_df <- data.frame(
     PC_a = original_features[, PC_a],

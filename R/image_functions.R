@@ -228,7 +228,7 @@ load_images_and_labels <- function(data_dir, image_size = 64, labels = FALSE) {
     image <- magick::image_read(image_paths[i])
 
     if (is.null(image)) {
-      message(sprintf("Warning: Failed to load image %s", image_paths[i]))
+      sprintf("Warning: Failed to load image %s", image_paths[i])
     } else {
       resized_image <- magick::image_resize(image, paste0(image_size, "x", image_size))
       images[[i]] <- as.numeric(magick::image_data(resized_image))

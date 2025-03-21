@@ -23,7 +23,9 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install scikit-learn numpy
+          pip install scikit-learn numpy tensorflow keras
+          python -c "import tensorflow as tf; print('TensorFlow version:', tf.__version__)"
+          python -c "import keras; print('Keras version:', keras.__version__)"
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -55,16 +57,13 @@ jobs:
           library(devtools)
           devtools::install()
         shell: Rscript {0}
-      - name: Run package tests
+      - name: Run package tests and generate coverage report
         run: |
           library(reticulate)
-          reticulate::use_python(Sys.which("python"))
+          reticulate::use_python("/opt/hostedtoolcache/Python/3.11.11/x64/bin/python", required = TRUE)
           reticulate::py_config()
           library(devtools)
           devtools::test()
-        shell: Rscript {0}
-      - name: Generate coverage report and upload to Codecov
-        run: |
           library(covr)
           covr::codecov(token = Sys.getenv("CODECOV_TOKEN"))
         shell: Rscript {0}

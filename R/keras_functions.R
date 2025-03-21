@@ -67,7 +67,7 @@ extract_features <- function(model = "base_cnn", images) {
     outputs = model$get_layer(last_pooling_layer_name)$output
   )
 
-  features <- feature_extraction_model %>% predict(images)
+  features <- feature_extraction_model %>% predict(list(input_layer_2 = images))
 
   return(features)
 }

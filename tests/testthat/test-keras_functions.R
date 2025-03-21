@@ -21,7 +21,7 @@ test_that("load_cda_model all", {
 
 test_that("extract_features valid input", {
   # Random test images
-  images <- array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3))
+  images <- array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3))
 
   # Extract features
   features <- extract_features("base_cnn", images)
@@ -42,13 +42,17 @@ test_that("extract_features images invalid dims", {
 })
 
 test_that("extract_features no pooling layer", {
-  # Mock model no pooling
-  model_no_pooling <- keras_model_sequential() %>%
-    layer_dense(units = 128, input_shape = c(64, 64, 3)) %>%
-    layer_dense(units = 10, activation = "softmax")
+  # Define the input layer properly
+  input_layer <- layer_input(shape = c(64, 64, 3), name = "input_layer")
+
+  # Mock model without pooling, using a functional API to avoid input shape warnings
+  model_no_pooling <- keras_model(inputs = input_layer, outputs = input_layer %>%
+                                    layer_flatten() %>%
+                                    layer_dense(units = 128) %>%
+                                    layer_dense(units = 10, activation = "softmax"))
 
   # Random test images
-  images <- array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3))
+  images <- array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3))
 
   # Error due to missing pooling layer
   expect_error(extract_features(model_no_pooling, images), "The model does not contain any pooling layers.")
