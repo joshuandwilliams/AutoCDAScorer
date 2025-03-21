@@ -60,7 +60,7 @@ jobs:
       - name: Run package tests and generate coverage report
         run: |
           library(reticulate)
-          reticulate::use_python("/opt/hostedtoolcache/Python/3.11.11/x64/bin/python", required = TRUE)
+          reticulate::use_python("python", required = TRUE)
           reticulate::py_config()
           library(devtools)
           devtools::test()
