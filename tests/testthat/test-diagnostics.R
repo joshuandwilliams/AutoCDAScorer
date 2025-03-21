@@ -1,31 +1,50 @@
-# Check if Python is available
+# Where is Python installed?
+cat("Python Configuration:\n")
+cat(reticulate::py_config())
+
+# Check Python installation
+cat("Checking if Python is available...\n")
 if (!reticulate::py_available(initialize = TRUE)) {
-  message("Python is not available for testing.")
+  cat("Python is not available for testing.\n")
   skip("Python is not available for testing.")
+} else {
+  cat("Python is available. Version: ", reticulate::py_config()$version, "\n")
 }
 
 # Check if NumPy is installed
+cat("Checking if NumPy is available...\n")
 if (!reticulate::py_module_available("numpy")) {
-  message("NumPy is not installed in the Python environment.")
+  cat("NumPy is not installed in the Python environment.\n")
   skip("NumPy is not installed in the Python environment.")
+} else {
+  cat("NumPy is available. Version: ", reticulate::py_run_string("import numpy; print(numpy.__version__)"), "\n")
 }
 
 # Check if scikit-learn is installed
+cat("Checking if scikit-learn is available...\n")
 if (!reticulate::py_module_available("sklearn.decomposition")) {
-  message("scikit-learn is not installed in the Python environment.")
+  cat("scikit-learn is not installed in the Python environment.\n")
   skip("scikit-learn is not installed in the Python environment.")
+} else {
+  cat("scikit-learn is available.\n")
 }
 
 # Check if TensorFlow is installed
+cat("Checking if TensorFlow is available...\n")
 if (!reticulate::py_module_available("tensorflow")) {
-  message("TensorFlow is not installed in the Python environment.")
+  cat("TensorFlow is not installed in the Python environment.\n")
   skip("TensorFlow is not installed in the Python environment.")
+} else {
+  cat("TensorFlow is available.\n")
 }
 
 # Check if Keras is installed
+cat("Checking if Keras is available...\n")
 if (!reticulate::py_module_available("keras")) {
-  message("Keras is not installed in the Python environment.")
+  cat("Keras is not installed in the Python environment.\n")
   skip("Keras is not installed in the Python environment.")
+} else {
+  cat("Keras is available.\n")
 }
 
 test_that("run_pca valid input", {
