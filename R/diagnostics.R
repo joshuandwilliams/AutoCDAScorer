@@ -54,26 +54,21 @@ pca_transform <- function(data, pca) {
       stop("Error: 'data' as a list must contain an 'images' element.")
     }
     images <- data$images
-    if (length(dim(images)) != 4 && length(dim(images)) !=2) {
-      stop("Error: 'data$images' must be a 4D array (batch, height, width, channels) or 2D matrix.")
+    if (length(dim(images)) != 4) {
+      stop("Error: 'data$images' must be a 4D array (batch, height, width, channels)")
     }
-    if (length(dim(images)) == 4) {
-      if (dim(images)[4] == 3) {
-        # aperm is CRITICAL here because R and Python expect a different order for color images
-        aperm_images <- aperm(images, c(1, 4, 3, 2))
-        data <- matrix(aperm_images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
-      } else {
-        # Assume (samples, height, width, channels) if channels != 3
-        data <- matrix(images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
-      }
+    if (dim(images)[4] == 3) {
+      # aperm is CRITICAL here because R and Python expect a different order for color images
+      aperm_images <- aperm(images, c(1, 4, 3, 2))
+      data <- matrix(aperm_images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
     } else {
-      data <- images
+      # Assume (samples, height, width, channels) if channels != 3
+      data <- matrix(images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
     }
   } else if (is.numeric(data)) {
     if (length(dim(data)) == 4){
       data <- matrix(aperm(data, c(1, 4, 3, 2)), nrow = dim(data)[1], ncol = prod(dim(data)[2:4]))
     }
-    # Assume it's already a 2D or 4D array; no further action needed.
   } else {
     stop("Error: 'data' must be numeric or a list with an 'images' element.")
   }
@@ -398,24 +393,9 @@ diagnostic_pca <- function(model="base_cnn", new_dataset, num_pcs, plot_type, nu
 
   # Check loaded pca_results object
   pca <- load_result_pca(model)
-  if (!is.list(pca) || !all(c("features_pca", "explained_variance") %in% names(pca))) {
-    stop("Error: 'pca' must be a list containing 'features_pca' and 'explained_variance'.")
-  }
-  if (!is.matrix(pca$features_pca)) {
-    stop("Error: 'pca$features_pca' must be a matrix.")
-  }
-  if (!is.numeric(pca$explained_variance) || length(pca$explained_variance) == 0) {
-    stop("Error: 'explained_variance' must be a numeric vector.")
-  }
 
   # Transform new data using PCA
   new_features <- pca_transform(new_dataset, pca)
-  if (!is.matrix(new_features)) {
-    stop("Error: 'new_features' must be a matrix after PCA transformation.")
-  }
-  if (ncol(pca$features_pca) != ncol(new_features)) {
-    stop("Error: The number of principal components in 'pca$features_pca' and 'new_features' must match.")
-  }
 
   # Check features and explained variance
   original_features <- pca$features_pca

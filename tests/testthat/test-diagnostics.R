@@ -60,7 +60,7 @@ test_that("pca_transform data images incorrect dims", {
 
   # Only 3 dimensions to input.
   data_3d <- list(images = array(runif(64 * 64 * 3), dim = c(64, 64, 3)))
-  expect_error(pca_transform(data_3d, pca_result), "Error: 'data$images' must be a 4D array (batch, height, width, channels) or 2D matrix.", fixed = TRUE)
+  expect_error(pca_transform(data_3d, pca_result), "Error: 'data$images' must be a 4D array (batch, height, width, channels)", fixed = TRUE)
 
   # Test with incorrect 4D dimensions (channels, height, width, samples) - triggers aperm, then fails dimension check
   data_4d_wrong_order <- list(images = array(runif(10 * 8 * 8 * 3), dim = c(3, 8, 8, 10)))
@@ -336,5 +336,4 @@ test_that("diagnostic_pca load_result_pca failure", {
   data <- generate_diagnostic_test_data()
   mockery::stub(diagnostic_pca, 'load_result_pca', function(model) stop("Simulated load failure"))
   expect_error(diagnostic_pca(model = "base_cnn", new_dataset = data$new_images, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins), "Simulated load failure")
-
 })
