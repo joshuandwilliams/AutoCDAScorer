@@ -1,3 +1,4 @@
+
 name: Test Coverage
 
 on:
@@ -7,12 +8,6 @@ on:
     branches: [main, master]
 
 jobs:
-  disable-codecov:
-    runs-on: ubuntu-latest
-    if: false
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
   test-coverage:
     runs-on: ubuntu-latest
     env:
@@ -22,16 +17,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install scikit-learn numpy tensorflow keras
-          python -c "import tensorflow as tf; print('TensorFlow version:', tf.__version__)"
-          python -c "import keras; print('Keras version:', keras.__version__)"
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -63,15 +48,13 @@ jobs:
           library(devtools)
           devtools::install()
         shell: Rscript {0}
-      - name: Run package tests and generate coverage report
+      - name: Run package tests
         run: |
-          library(reticulate)
-          reticulate::use_python("python", required = TRUE)
-          reticulate::py_config()
           library(devtools)
           devtools::test()
+        shell: Rscript {0}
+      - name: Generate coverage report and upload to Codecov
+        run: |
           library(covr)
           covr::codecov(token = Sys.getenv("CODECOV_TOKEN"))
         shell: Rscript {0}
-
-

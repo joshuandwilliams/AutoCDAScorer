@@ -5,8 +5,8 @@
 \title{Diagnostic PCA Scatter Plots for All Principal Component Pairs}
 \usage{
 diagnostic_pca(
-  pca,
-  new_features,
+  model = "base_cnn",
+  new_dataset,
   num_pcs,
   plot_type,
   num_ellipses = 3,
@@ -14,9 +14,9 @@ diagnostic_pca(
 )
 }
 \arguments{
-\item{pca}{A list containing the PCA model output, including \code{original_features} and \code{explained_variance}.}
+\item{model}{A string specifying the model name to load the PCA results from.}
 
-\item{new_features}{A matrix of new features transformed by PCA.}
+\item{new_dataset}{An array or list containing the new dataset to transform using PCA.}
 
 \item{num_pcs}{An integer specifying the number of principal components to consider.}
 

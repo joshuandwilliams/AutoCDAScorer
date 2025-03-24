@@ -2,18 +2,28 @@
 % Please edit documentation in R/diagnostics.R
 \name{pca_transform}
 \alias{pca_transform}
-\title{Apply pre-trained PCA transformation to new data}
+\title{PCA Transformation}
 \usage{
-pca_transform(data, pca = NULL)
+pca_transform(data, pca)
 }
 \arguments{
-\item{data}{An array of extracted features or a list containing an array of images.}
+\item{data}{The input data. Can be either:
+\itemize{
+\item A 4D numeric array (n_samples, height, width, channels) representing images.
+\item A 2D numeric matrix (n_samples, n_features) where each row is a flattened image.
+\item A list containing an element named \code{images}, which is a 4D or 2D numeric array as described above.
+}}
 
-\item{pca}{A list containing a prcomp pca object.}
+\item{pca}{A list containing the results of a PCA fit, with at least the following elements:
+\itemize{
+\item \code{principal_components}: A matrix where each row represents a principal component.
+\item \code{center}: A numeric vector representing the mean of the original training data.
+}}
 }
 \value{
-A matrix of PCA-transformed features.
+A numeric matrix representing the PCA-transformed data (n_samples, n_components).
 }
 \description{
-This function applies a previously trained PCA model to a new dataset without modifying the PCA itself.
+Applies Principal Component Analysis (PCA) transformation to input data,
+mirroring the behavior of sklearn's PCA.transform() method.
 }

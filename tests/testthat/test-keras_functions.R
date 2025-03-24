@@ -1,7 +1,6 @@
 test_that("load_cda_model all", {
-  # Check file exists
-  path <- fs::path_package("extdata", "model_39_0.keras", package = "AutoCDAScorer")
-  expect_true(file.exists(path), info = "Model file does not exist")
+  # Check file exists using system.file
+  path <- system.file("extdata", "model_39_0.keras", package = "AutoCDAScorer", mustWork = TRUE)
 
   # Load default model
   model <- load_cda_model()
@@ -16,46 +15,8 @@ test_that("load_cda_model all", {
 
   # Test invalid name
   expect_error(load_cda_model("non_existent_model"), "Invalid model name. Available options: base_cnn")
+  expect_error(load_cda_model(model = NULL), "Invalid model name. Available options: base_cnn")
 
-})
-
-test_that("extract_features valid input", {
-  # Random test images
-  images <- array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3))
-
-  # Extract features
-  features <- extract_features("base_cnn", images)
-
-  # Check feature shape and individual dimensions
-  expect_true(is.array(features), info = "Features should be returned as an array")
-  expect_equal(length(dim(features)), 4, info = "Feature map should have 4 dimensions")
-  expect_equal(dim(features)[1], 5, info = "Number of images should match input size")
-
-  # Check that features are non-empty
-  expect_gt(prod(dim(features)), 0, label = "Features should not be empty")
-})
-
-test_that("extract_features images invalid dims", {
-  images <- array(stats::runif(64*64*3), dim = c(64, 64, 3))
-
-  expect_error(extract_features("base_cnn", images), "Error: 'images' must be a 4D array with dimensions (batch, height, width, channels).", fixed = TRUE)
-})
-
-test_that("extract_features no pooling layer", {
-  # Define the input layer properly
-  input_layer <- layer_input(shape = c(64, 64, 3), name = "input_layer")
-
-  # Mock model without pooling, using a functional API to avoid input shape warnings
-  model_no_pooling <- keras_model(inputs = input_layer, outputs = input_layer %>%
-                                    layer_flatten() %>%
-                                    layer_dense(units = 128) %>%
-                                    layer_dense(units = 10, activation = "softmax"))
-
-  # Random test images
-  images <- array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3))
-
-  # Error due to missing pooling layer
-  expect_error(extract_features(model_no_pooling, images), "The model does not contain any pooling layers.")
 })
 
 test_that("predict_score softmax", {

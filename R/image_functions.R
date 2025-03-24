@@ -350,5 +350,6 @@ annotations_to_csv <- function(dataset, predictions, path) {
   }
 
   annotation_df <- data.frame(filepath = dataset$filenames, prediction = predictions)
+  annotation_df <- annotation_df[order(annotation_df$filepath), ]
   write.csv(annotation_df, path, row.names = FALSE)
 }

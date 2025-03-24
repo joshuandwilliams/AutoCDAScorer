@@ -16,71 +16,108 @@ use_condaenv("/Users/jowillia/opt/anaconda3/envs/r-tensorflow")
 
 # Load model and images. View example image
 ```{r}
-# Load model
-model <- load_cda_model("base_cnn")
-
 # Load original images
 original_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/cropped_images", image_size=64, labels=TRUE)
+show_test_image(original_dataset)
 
 # Load new images
 new_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/bio_test", image_size=64, labels=TRUE)
-```
-
-```{r}
-show_test_image <- function(dataset) {
-  if (!is.list(dataset)) {
-    stop("Error: dataset must be a list.")
-  }
-  if (is.null(dataset) || !"images" %in% names(dataset)) {
-    stop("Error: dataset must contain an 'images' element.")
-  }
-  if (length(dim(dataset$images)) != 4) {
-    stop("Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).")
-  }
-
-  g <- grid::rasterGrob(dataset$images[1,,,])
-  grid::grid.newpage()
-  grid::grid.draw(g)
-}
-
-show_test_image(original_dataset)
 show_test_image(new_dataset)
 ```
 
 # Build PCA from original images and transform new images using generated PCs
 ```{r}
-result_pca <- run_pca_python(original_dataset, n_components=5)
-transformed_new_features <- pca_transform_python(new_dataset, result_pca)
-```
+# Generate PCA data object and save to package data
 
-```{r}
-print(transformed_new_features)
+run_pca_python <- function(data, n_components = 10) {
+  # Check Python installation and environment
+  if (!reticulate::py_available(initialize = TRUE)) {
+    stop("Error: Python is not available. Please install Python and configure reticulate.")
+  }
+  if (!reticulate::py_module_available("numpy")) {
+    stop("Error: The 'numpy' module is not installed in the Python environment. Install it using 'pip install numpy'.")
+  }
+  if (!reticulate::py_module_available("sklearn.decomposition")) {
+    stop("Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
+  }
+  
+  # Import Python modules
+  np <- reticulate::import("numpy")
+  sklearn_decomposition <- reticulate::import("sklearn.decomposition")
+
+  # Handle data format
+  if (is.list(data)) {
+    if (!"images" %in% names(data)) {
+      stop("Error: You provided 'data' as a list. It must contain an 'images' element.")
+    }
+    images <- data$images
+    if (length(dim(images)) != 4) {
+      stop("Error: data$images must be a 4D array (batch, height, width, channels).")
+    }
+    images_array <- np$array(images)
+    images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1)))
+  } else if (is.numeric(data)) {
+    images_array <- np$array(as.matrix(data))
+  } else {
+    stop("Error: 'data' must either be numeric (a matrix/array) or a list containing an 'images' element.")
+  }
+
+  # Validate n_components
+  if (n_components > dim(images_array)[2]) {
+    stop("Error: 'n_components' cannot be greater than the number of features in the input data.")
+  }
+
+  # Perform PCA
+  pca <- sklearn_decomposition$PCA(n_components=as.integer(floor(n_components)))
+  features_pca <- pca$fit_transform(images_array)
+
+  # Convert Python objects to R format
+  features_pca_r <- reticulate::py_to_r(features_pca)
+  explained_variance_r <- reticulate::py_to_r(pca$explained_variance_ratio_)
+  principal_components_r <- reticulate::py_to_r(pca$components_)
+  center_r <- reticulate::py_to_r(pca$mean_)  # Equivalent to prcomp$center in R
+
+  # Return only the essential PCA components
+  return(list(
+    features_pca = features_pca_r,
+    explained_variance = explained_variance_r[1:n_components],
+    principal_components = principal_components_r[1:n_components, ],
+    center = center_r
+  ))
+}
+
+result_pca <- run_pca_python(original_dataset, n_components=5)
+saveRDS(result_pca, "~/Packages/AutoCDAScorer/inst/extdata/base_cnn_pca.rds")
 ```
 
 # Diagnostic plots
 Replace interactive plot with all-against-all plots. Here are three types: target plots, contour plots, and convex hull plots.
 ```{r}
-target_plot <- diagnostic_pca_all_against_all(
-  result_pca,
-  transformed_new_features,
+target_plot <- diagnostic_pca(
+  "base_cnn",
+  new_dataset,
   num_pcs = 5,
   plot_type = "target",
   num_ellipses = 3
 )
 target_plot
+```
 
-contour_plot <- diagnostic_pca_all_against_all(
-  result_pca,
-  transformed_new_features,
+```{r}
+contour_plot <- diagnostic_pca(
+  "base_cnn",
+  new_dataset,
   num_pcs = 5,
   plot_type = "density",
   num_bins = 5
 )
 contour_plot
+```
 
-convexhull_plot <- diagnostic_pca_all_against_all(
-  result_pca,
-  transformed_new_features,
+```{r}
+convexhull_plot <- diagnostic_pca(
+  "base_cnn",
+  new_dataset,
   num_pcs = 5,
   plot_type = "convexhull"
 )
@@ -92,4 +129,9 @@ convexhull_plot
 new_images_bgr <- rgb_to_bgr(new_dataset)
 new_predictions <- predict_score("base_cnn", new_images_bgr, softmax = FALSE)
 table(new_predictions)
+```
+
+# Save predictions
+```{r}
+annotations_to_csv(new_dataset, new_predictions, "~/Packages/AutoCDAScorer/dev/annotations.csv")
 ```

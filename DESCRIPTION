@@ -20,13 +20,11 @@ Imports:
     fs,
     geometry,
     ggplot2,
-    gmodels,
     grDevices,
     grid,
     keras3,
     magick,
     MASS,
     readr,
-    reticulate
 URL: https://github.com/joshuandwilliams/AutoCDAScorer
 BugReports: https://github.com/joshuandwilliams/AutoCDAScorer/issues
