@@ -20,18 +20,26 @@ test_that("load_cda_model all", {
 })
 
 test_that("predict_score softmax", {
-  # Model and test data
+  # Model and test data (list with images)
   model <- load_cda_model("base_cnn")
-  data <- list(images = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
+  data_list <- list(images = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
+  data_array <- array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3))
 
   # Get softmax
-  softmax_scores <- predict_score(model, data, softmax = TRUE)
+  softmax_scores_list <- predict_score(model, data_list, softmax = TRUE)
+  softmax_scores_array <- predict_score(model, data_array, softmax = TRUE)
 
-  # Check softmax dimensions, datatype, and range
-  expect_true(is.matrix(softmax_scores), info = "Softmax scores should be returned as a matrix")
-  expect_equal(dim(softmax_scores)[2], 7, info = "Number of classes (columns) should be 7")
-  expect_equal(dim(softmax_scores)[1], 5, info = "Number of images (rows) should match input size")
-  expect_true(all(softmax_scores >= 0 & softmax_scores <= 1), info = "Softmax values should be between 0 and 1")
+  # Check softmax dimensions, datatype, and range (list input)
+  expect_true(is.matrix(softmax_scores_list), info = "Softmax scores should be returned as a matrix")
+  expect_equal(dim(softmax_scores_list)[2], 7, info = "Number of classes (columns) should be 7")
+  expect_equal(dim(softmax_scores_list)[1], 5, info = "Number of images (rows) should match input size")
+  expect_true(all(softmax_scores_list >= 0 & softmax_scores_list <= 1), info = "Softmax values should be between 0 and 1")
+
+  # Check softmax dimensions, datatype, and range (array input)
+  expect_true(is.matrix(softmax_scores_array), info = "Softmax scores should be returned as a matrix")
+  expect_equal(dim(softmax_scores_array)[2], 7, info = "Number of classes (columns) should be 7")
+  expect_equal(dim(softmax_scores_array)[1], 5, info = "Number of images (rows) should match input size")
+  expect_true(all(softmax_scores_array >= 0 & softmax_scores_array <= 1), info = "Softmax values should be between 0 and 1")
 })
 
 test_that("predict_score class", {
@@ -52,4 +60,14 @@ test_that("predict_score invalid model", {
   data <- list(images = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
 
   expect_error(predict_score(invalid_model, data), "Model is not a valid Keras model")
+})
+
+test_that("predict_score invalid data", {
+  # Case 1: data is a list but does not contain "images"
+  invalid_data_1 <- list(foo = array(stats::runif(5*64*64*3), dim = c(5, 64, 64, 3)))
+  expect_error(predict_score("base_cnn", invalid_data_1), "Error: 'data' is a list, so it must contain an 'images' element.")
+
+  # Case 2: "images" is a 3D array instead of 4D
+  invalid_data_2 <- list(images = array(stats::runif(64*64*3), dim = c(64, 64, 3)))
+  expect_error(predict_score("base_cnn", invalid_data_2), "Error: 'images' must be a 4D array with dimensions (batch, height, width, channels).", fixed = TRUE)
 })
