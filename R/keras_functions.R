@@ -7,7 +7,6 @@
 #' @return A Keras model object
 #'
 #' @import keras3
-#' @importFrom fs path_package
 #'
 #' @export
 load_cda_model <- function(model = "base_cnn") {
@@ -16,60 +15,16 @@ load_cda_model <- function(model = "base_cnn") {
     # Add more models here
   )
 
-  if (!model %in% names(model_lookup)) {
+  if (!model %in% names(model_lookup) || is.null(model)) {
     stop("Invalid model name. Available options: ", paste(names(model_lookup), collapse = ", "))
   }
 
-  path <- fs::path_package("extdata", model_lookup[[model]], package = "AutoCDAScorer")
+  path <- system.file("extdata", model_lookup[[model]], package = "AutoCDAScorer")
   model <- keras3::load_model(path)
 
   # Don't need to test if model is valid since they are all known pre-validated internal models.
 
   return(model)
-}
-
-#' Extract features from the last pooling layer of a Keras model
-#'
-#' This function extracts features from the last pooling layer of the model for a set of images.
-#'
-#' @param model A Keras model from which to extract features.
-#' @param images A 4D array of images (height, width, channels, num_images).
-#'
-#' @return A matrix containing the extracted features.
-#'
-#' @import keras3
-#' @export
-extract_features <- function(model = "base_cnn", images) {
-  if (is.character(model)) {
-    model <- load_cda_model(model)
-  }
-
-  if (!is.array(images) || length(dim(images)) != 4) {
-    stop("Error: 'images' must be a 4D array with dimensions (batch, height, width, channels).")
-  }
-
-  last_pooling_layer_name <- NULL
-  for (layer in rev(model$layers)) {
-    if (any(grepl("MaxPooling2D", class(layer))) ||
-        any(grepl("GlobalAveragePooling2D", class(layer))) ||
-        any(grepl("AveragePooling2D", class(layer)))) {
-      last_pooling_layer_name <- layer$name
-      break
-    }
-  }
-
-  if (is.null(last_pooling_layer_name)) {
-    stop("The model does not contain any pooling layers.")
-  }
-
-  feature_extraction_model <- keras3::keras_model(
-    inputs = model$inputs,
-    outputs = model$get_layer(last_pooling_layer_name)$output
-  )
-
-  features <- feature_extraction_model %>% predict(list(input_layer_2 = images))
-
-  return(features)
 }
 
 #' Predict the score for a batch of images using a CDAScorer Keras model
@@ -86,7 +41,18 @@ extract_features <- function(model = "base_cnn", images) {
 #'
 #' @export
 predict_score <- function(model = "base_cnn", data, softmax = FALSE) {
-  images = data$images
+  if (is.list(data)) {
+    if (!"images" %in% names(data)) {
+      stop("Error: 'data' is a list, so it must contain an 'images' element.")
+    }
+    images <- data$images
+  } else {
+    images <- data
+  }
+
+  if (!is.array(images) || length(dim(images)) != 4) {
+    stop("Error: 'images' must be a 4D array with dimensions (batch, height, width, channels).")
+  }
 
   if (is.character(model)) {
     model <- load_cda_model(model)
@@ -96,7 +62,7 @@ predict_score <- function(model = "base_cnn", data, softmax = FALSE) {
     stop("Model is not a valid Keras model")
   }
 
-  raw_scores <- model %>% predict(images)
+  raw_scores <- model$predict(images)
 
   if (softmax) {
     return(raw_scores)

@@ -1,0 +1,159 @@
+---
+title: "Reproducing sklearn PCA Transform in R"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
+```
+
+```{python}
+import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.utils.validation import check_array
+```
+
+```{python}
+# Generate dummy data (4D array simulating images)
+n_samples = 100
+height = 4
+width = 4
+channels = 1
+X_4d = np.random.rand(n_samples, height, width, channels)
+
+# Reshape to 2D (n_samples, n_features)
+n_features = height * width * channels
+X_2d = X_4d.reshape(n_samples, n_features)
+
+# Fit PCA
+pca = PCA(n_components=10, whiten=False, svd_solver='full')  # You can adjust n_components
+pca.fit(X_2d)
+```
+
+```{python}
+def custom_transform(X, pca_model):
+    print("Python")
+    print(X)
+    X_projected = X @ pca_model.components_.T
+    #print(X_projected[1])
+    X_centered_projected = X_projected - np.reshape(pca_model.mean_, (1, -1)) @ pca_model.components_.T
+    return X_centered_projected
+```
+
+```{r}
+custom_transform_r <- function(X, pca_components, pca_mean) {
+  # Ensure inputs are matrices
+  X <- as.matrix(X)
+  print("R")
+  print(X)
+  pca_components <- as.matrix(pca_components)
+
+  # 1. Project onto components
+  X_projected <- X %*% pca_components
+  #print(X_projected[1])
+
+  # 2. Center the projected data
+  projected_mean <- matrix(pca_mean, nrow = 1) %*% pca_components
+  replicated_projected_mean <- matrix(projected_mean, nrow = nrow(X_projected), ncol = ncol(projected_mean), byrow = TRUE)
+  X_centered_projected <- X_projected - replicated_projected_mean
+
+  return(X_centered_projected)
+}
+
+components <- t(py$pca$components_)  # Transpose as before
+mean_vector <- py$pca$mean_
+X_4d_r <- py$X_4d
+X_r <- matrix(aperm(X_4d_r, c(1, 4, 3, 2)), nrow = py$n_samples, ncol = py$n_features)
+X_r <- as.matrix(X_r)
+```
+
+
+```{r}
+# --- Print X_r (R) ---
+print("X_r (R - First 5 rows and columns):")
+print(head(X_r[, 1:5]))
+
+# --- Access X_2d from Python and Print (using reticulate) ---
+print("X_2d (Python - First 5 rows and columns):")
+print(head(py$X_2d[, 1:5]))
+
+print("Are X_r and X_2d equal (using all.equal)?")
+print(all.equal(X_r, py$X_2d, check.attributes = FALSE, tolerance=1e-8))
+```
+
+```{r}
+X_transformed_r <- custom_transform_r(X_r, components, mean_vector)
+X_transformed_py_custom <- py$custom_transform(py$X_2d, py$pca)
+X_transformed_py_sklearn <- py$pca$transform(py$X_2d)
+
+print(paste("Max Diff (R vs. Custom Python):", max(abs(X_transformed_r - X_transformed_py_custom))))
+print(paste("Max Diff (R vs. sklearn):", max(abs(X_transformed_r - X_transformed_py_sklearn))))
+```
+```{r}
+#' Apply pre-trained PCA transformation to new data using Python
+#'
+#' This function applies a previously trained PCA model to a new dataset without modifying the PCA itself.
+#'
+#' @param data An array of extracted features or a list containing an array of images.
+#' @param pca A list returned by `run_pca_python`, containing a trained PCA model.
+#' @return A matrix of PCA-transformed features.
+#'
+#' @importFrom reticulate py_available py_module_available import
+#'
+#' @export
+pca_transform_python <- function(data, pca = NULL) {
+  # Check Python installation and environment
+  if (!reticulate::py_available(initialize = TRUE)) {
+    stop("Error: Python is not available. Please install Python and configure reticulate.")
+  }
+  if (!reticulate::py_module_available("numpy")) {
+    stop("Error: The 'numpy' module is not installed in the Python environment. Install it using 'pip install numpy'.")
+  }
+  if (!reticulate::py_module_available("sklearn.decomposition")) {
+    stop("Error: The 'scikit-learn' module is not installed in the Python environment. Install it using 'pip install scikit-learn'.")
+  }
+  np <- reticulate::import("numpy")
+  sklearn_decomposition <- reticulate::import("sklearn.decomposition")
+
+  if (is.null(pca) || !"pca" %in% names(pca) || !inherits(pca$pca, "sklearn.decomposition._base._BasePCA")) {
+    stop("Error: 'pca' must be a list containing a 'PCA' object under the 'pca' element from scikit-learn.")
+  }
+  pca_model <- pca$pca
+
+  if (is.list(data)){
+    if (!"images" %in% names(data)) {
+      stop("Error: You provided 'data' as a list. In this case it must contain an 'images' element.")
+    }
+    images <- data$images
+    if (length(dim(images)) != 4) {
+      stop("Error: data$images must be a 4D array with dimensions (batch, height, width, channels).")
+    }
+    images_array <- np$array(images)
+    images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1)))
+  } else if (is.numeric(data)) {
+    images_array <- np$array(as.matrix(data))
+  } else {
+    stop("Error: 'data' must either be numeric (e.g. a numeric array or vector) or a list containing an 'images' element which is numeric.")
+  }
+  if (ncol(images_array) != length(pca_model$mean_)) {
+    stop("Error: The number of features in 'data' (columns of 'features_matrix') must match the number of features the PCA model was trained on.")
+  }
+  transformed_data <- pca_model$transform(images_array)
+
+  return(transformed_data)
+}
+transformed_new_python <- pca_transform_python(new_dataset, result_pca)
+```
+
+```{r}
+print(new_dataset$images[1,1,1,])
+print(transformed_new_python[1,])
+```
+```{r}
+transformed_data_R <- pca_transform(new_dataset, result_pca)
+```
+
+```{r}
+print(transformed_data_R[1,])
+```
