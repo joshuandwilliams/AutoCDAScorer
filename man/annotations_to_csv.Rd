@@ -2,24 +2,20 @@
 % Please edit documentation in R/image_functions.R
 \name{annotations_to_csv}
 \alias{annotations_to_csv}
-\title{Save Annotations to CSV}
+\title{Save annotations to CSV}
 \usage{
-annotations_to_csv(dataset, predictions, path)
+annotations_to_csv(data, predictions, output_path)
 }
 \arguments{
-\item{dataset}{A list containing a 4D array of images (batch, height, width, channels) and a vector of filenames.}
+\item{data}{A list containing a 4D array of images (batch, height, width, channels) and a vector of filenames.}
 
-\item{predictions}{A vector of predicted class labels or a matrix of raw model predictions.
-If a matrix, it will be processed to extract the predicted class.}
+\item{predictions}{A vector of predicted class labels or a matrix of raw model predictions.}
 
-\item{path}{The file path where the CSV file should be saved.}
+\item{output_path}{The file path where the CSV file should be saved.}
 }
 \value{
-Writes a CSV file with two columns: "filepath" and "prediction".
+Writes a CSV file with two columns: "name" and "prediction".
 }
 \description{
 This function saves the predicted annotations (image filepaths and predicted classes) to a CSV file.
-It validates the dataset input, checks the consistency of the number of filenames with predictions,
-processes the predictions, and then writes the results to a specified CSV file.
-The CSV contains two columns: "filepath" and "prediction".
 }

@@ -4,10 +4,10 @@
 \alias{load_cda_model}
 \title{Load CDAScorer Keras Model}
 \usage{
-load_cda_model(model = "base_cnn")
+load_cda_model(model)
 }
 \arguments{
-\item{model}{A string specifying which model to load. Default is "base_cnn".}
+\item{model}{A string specifying which model to load.}
 }
 \value{
 A Keras model object

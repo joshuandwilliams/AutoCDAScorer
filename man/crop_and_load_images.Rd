@@ -2,12 +2,12 @@
 % Please edit documentation in R/image_functions.R
 \name{crop_and_load_images}
 \alias{crop_and_load_images}
-\title{Crop and Load Images Using CDAScorer Dataframe}
+\title{Crop and load images using CDAScorer dataframe}
 \usage{
-crop_and_load_images(cdascorer, image_size = 64, path = NULL)
+crop_and_load_images(input_path, image_size = 64, output_path = NULL)
 }
 \arguments{
-\item{cdascorer}{A dataframe containing image information, with columns: "img", "x1", "x2", "y1", "y2", and optional "score", "row", "col", "pos".}
+\item{input_path}{A string representing the filepath of a CDAScorer CSV.}
 
 \item{image_size}{An integer for the resizing of loaded images. Default is 64.}
 
@@ -16,12 +16,11 @@ crop_and_load_images(cdascorer, image_size = 64, path = NULL)
 \value{
 A list containing:
 \itemize{
-\item \code{images}: an array of cropped images.
-\item \code{labels}: a numeric vector of labels (if the "score" column exists in the dataframe).
+\item \code{images}: a 4D array of cropped images.
 \item \code{filenames}: a character vector of filenames for the cropped images.
 }
 }
 \description{
-This function takes a CDAScorer dataframe and crops images based on the coordinates in the dataframe.
-The cropped images are loaded into memory, and if a "score" column exists, they are saved in subdirectories based on their score.
+This function takes a path to a CDAScorer dataframe and crops images based on the coordinates in the dataframe.
+The cropped images are loaded into memory, and optionally saved to an output directory.
 }

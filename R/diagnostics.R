@@ -1,22 +1,14 @@
 #' Load a Saved PCA Result Object
 #'
-#' This function loads a saved RDS object based on a predefined lookup table.
-#' It is designed for loading the `result_pca` object but can be extended to load other objects in the future.
+#' This function loads a saved RDS object.
 #'
-#' @param model A character string specifying the object to load. Defaults to `"base_cnn_pca"`.
+#' @param data A character string specifying the object to load. Defaults to `"base_cnn_pca"`.
 #'
 #' @return The loaded R object.
-load_result_pca <- function(model = "base_cnn") {
-  lookup_table <- list(
-    base_cnn = "base_cnn_pca.rds"
-    # You can add more named objects here in the future
-  )
+load_result_pca <- function(data) {
+  pca_path = check_valid_package_data(name = data, pca = TRUE)
 
-  if (!model %in% names(lookup_table) || is.null(model)) {
-    stop("Invalid model name. Available options: ", paste(names(lookup_table), collapse = ", "))
-  }
-
-  path <- system.file("extdata", lookup_table[[model]], package = "AutoCDAScorer")
+  path <- system.file("extdata", pca_path, package = "AutoCDAScorer")
   pca_data <- readRDS(path)
 
   return(pca_data)
@@ -36,50 +28,31 @@ load_result_pca <- function(model = "base_cnn") {
 #'   - `center`: A numeric vector representing the mean of the original training data.
 #'
 #' @return A numeric matrix representing the PCA-transformed data (n_samples, n_components).
-#' @export
 pca_transform <- function(data, pca) {
 
-  # Check that pca list has necessary components
-  if (is.null(pca) || !all(c("principal_components", "center") %in% names(pca))) {
-    stop("Error: 'pca' must be a list containing 'principal_components' and 'center'.")
-  }
+  check_valid_pca(pca, features_pca = FALSE, explained_variance = FALSE, principal_components = TRUE, center = TRUE)
+  check_valid_data(data, images = TRUE, filenames = FALSE)
 
   # Extract PCA components
   pca_components <- t(as.matrix(pca$principal_components)) # Transpose immediately
   pca_mean <- pca$center
 
-  # Handle input data format
-  if (is.list(data)) {
-    if (!"images" %in% names(data)) {
-      stop("Error: 'data' as a list must contain an 'images' element.")
-    }
-    images <- data$images
-    if (length(dim(images)) != 4) {
-      stop("Error: 'data$images' must be a 4D array (batch, height, width, channels)")
-    }
-    if (dim(images)[4] == 3) {
-      # aperm is CRITICAL here because R and Python expect a different order for color images
-      aperm_images <- aperm(images, c(1, 4, 3, 2))
-      data <- matrix(aperm_images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
-    } else {
-      # Assume (samples, height, width, channels) if channels != 3
-      data <- matrix(images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
-    }
-  } else if (is.numeric(data)) {
-    if (length(dim(data)) == 4){
-      data <- matrix(aperm(data, c(1, 4, 3, 2)), nrow = dim(data)[1], ncol = prod(dim(data)[2:4]))
-    }
+  # Images
+  images <- data$images
+  if (dim(images)[4] == 3) {
+    # aperm is CRITICAL here because R and Python expect a different order for color images
+    aperm_images <- aperm(images, c(1, 4, 3, 2))
+    data <- matrix(aperm_images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
   } else {
-    stop("Error: 'data' must be numeric or a list with an 'images' element.")
+    # Assume (samples, height, width, channels) if channels != 3
+    data <- matrix(images, nrow = dim(images)[1], ncol = prod(dim(images)[2:4]))
   }
-
-  data <- as.matrix(data)
-  pca_components <- as.matrix(pca_components)
 
   if (ncol(data) != length(pca_mean)) {
-    stop("Error: Feature count in 'data' does not match PCA training feature count.")
+    stop(sprintf("Error: Feature count in 'data' (%d) (image height x width x channels) does not match PCA training feature count (%d). Please check the dimensions of your new images.", ncol(data), length(pca_mean)))
   }
 
+  # Transformation
   # 1. Project onto components
   data_projected <- data %*% pca_components
 
@@ -90,46 +63,29 @@ pca_transform <- function(data, pca) {
   return(data_centered_projected)
 }
 
+
 #' Scatter Plot of PCA-Transformed Features with Confidence Ellipses
 #'
 #' This function creates a scatter plot of original and new features transformed by PCA,
 #' highlighting the distribution of data points along two selected principal components.
 #' It also overlays confidence ellipses to visualize the data spread.
 #'
-#' @param original_features A matrix of original features transformed by PCA.
-#' @param new_features A matrix of new features transformed by PCA.
-#' @param explained_variance A numeric vector of explained variance ratios for each principal component.
+#' @param pca A PCA object loaded from package data.
+#' @param new_features A matrix of new features transformed by the same PCA.
 #' @param PC_a An integer indicating the index of the first principal component for plotting.
 #' @param PC_b An integer indicating the index of the second principal component for plotting.
-#' @param num_pcs An integer representing the total number of principal components used in PCA.
 #' @param num_ellipses An integer specifying the number of ellipses to draw for visualizing data spread (default: 3).
 #'
 #' @return A ggplot2 object representing the PCA scatter plot with confidence ellipses.
 #'
 #' @import ggplot2
 #' @importFrom stats median
-pca_plot_with_target <- function(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_ellipses = 3) {
-  if (!is.matrix(original_features) || nrow(original_features) == 0 || ncol(original_features) == 0)
-    stop("original_features must be a non-empty matrix")
-  if (!is.matrix(new_features) || nrow(new_features) == 0 || ncol(new_features) == 0)
-    stop("new_features must be a non-empty matrix")
-  if (!is.numeric(explained_variance) || length(explained_variance) == 0)
-    stop("explained_variance must be a non-empty numeric vector")
-
-  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
-  if (num_pcs <= 0) stop("num_pcs must be greater than 0")
-  if (!is.integer(num_ellipses) && !is.numeric(num_ellipses)) stop("num_ellipses must be an integer")
-  if (num_ellipses <= 0) stop("num_ellipses must be greater than 0")
-
-  if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
-  if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
-  if (PC_a <= 0 || PC_a > num_pcs) stop("PC_a must be between 1 and num_pcs")
-  if (PC_b <= 0 || PC_b > num_pcs) stop("PC_b must be between 1 and num_pcs")
-
+pca_diagnostic_target <- function(pca, new_features, PC_a, PC_b, num_ellipses = 3) {
   PC_a <- as.integer(PC_a)
   PC_b <- as.integer(PC_b)
-  num_pcs <- as.integer(num_pcs)
   num_ellipses <- as.integer(num_ellipses)
+
+  original_features <- pca$features_pca
 
   original_df <- data.frame(
     PC_a = original_features[, PC_a],
@@ -142,9 +98,6 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
     Type = "New"
   )
   plot_data <- rbind(original_df, new_df)
-
-  variance_a <- explained_variance[PC_a]
-  variance_b <- explained_variance[PC_b]
 
   # Ellipse centre and scaling
   center_x <- stats::median(plot_data$PC_a)
@@ -166,6 +119,7 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
     ellipse_points(center_x, center_y, scale_factor * range_x, scale_factor * range_y, i)
   }))
 
+  # Build the plot
   p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
     geom_point(alpha = 0.5, size = 0.5) +
     scale_color_manual(values = c("Original" = "grey", "New" = "red")) +
@@ -193,37 +147,24 @@ pca_plot_with_target <- function(original_features, new_features, explained_vari
 #' Scatter Plot of PCA-Transformed Features with Density Contours
 #'
 #' This function creates a scatter plot of original and new features transformed by PCA,
-#' overlaying density contours to visualize data concentration using kernel density estimation (KDE).
+#' overlaying density contours to visualize original data concentration using kernel density estimation (KDE).
 #'
-#' @param original_features A matrix of original features transformed by PCA.
+#' @param pca A PCA object loaded from package data.
 #' @param new_features A matrix of new features transformed by PCA.
-#' @param explained_variance A numeric vector of explained variance ratios for each principal component.
 #' @param PC_a An integer indicating the index of the first principal component for plotting.
 #' @param PC_b An integer indicating the index of the second principal component for plotting.
-#' @param num_pcs An integer representing the total number of principal components used in PCA.
 #' @param num_bins An integer specifying the number of contour bins for the density plot (default: 3).
 #'
 #' @return A ggplot2 object representing the PCA scatter plot with density contours.
 #'
 #' @import ggplot2
 #' @importFrom MASS kde2d
-pca_plot_with_density <- function(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_bins = 3) {
-  if (!is.matrix(original_features) || nrow(original_features) == 0 || ncol(original_features) == 0)
-    stop("original_features must be a non-empty matrix")
-  if (!is.matrix(new_features) || nrow(new_features) == 0 || ncol(new_features) == 0)
-    stop("new_features must be a non-empty matrix")
-  if (!is.numeric(explained_variance) || length(explained_variance) == 0)
-    stop("explained_variance must be a non-empty numeric vector")
+pca_diagnostic_density <- function(pca, new_features, PC_a, PC_b, num_bins = 3) {
+  PC_a <- as.integer(PC_a)
+  PC_b <- as.integer(PC_b)
+  num_ellipses <- as.integer(num_bins)
 
-  if (!is.integer(num_pcs) && !is.numeric(num_pcs)) stop("num_pcs must be an integer")
-  if (num_pcs <= 0) stop("num_pcs must be greater than 0")
-  if (!is.integer(num_bins) && !is.numeric(num_bins)) stop("num_bins must be an integer")
-  if (num_bins <= 0) stop("num_bins must be greater than 0")
-
-  if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
-  if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
-  if (PC_a <= 0 || PC_a > num_pcs) stop("PC_a must be between 1 and num_pcs")
-  if (PC_b <= 0 || PC_b > num_pcs) stop("PC_b must be between 1 and num_pcs")
+  original_features <- pca$features_pca
 
   original_df <- data.frame(
     PC_a = original_features[, PC_a],
@@ -236,9 +177,6 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
     Type = "New"
   )
   plot_data <- rbind(original_df, new_df)
-
-  variance_a <- explained_variance[PC_a]
-  variance_b <- explained_variance[PC_b]
 
   # 2D Density estimation (only from original data not new)
   kde <- MASS::kde2d(original_features[, PC_a], original_features[, PC_b], n = 100,
@@ -265,7 +203,7 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
       plot.margin = unit(c(0, 0, 0, 0), "cm")
     ) +
     geom_contour(
-      data = kde_df,  # Use the kde_df calculated from *only* original data
+      data = kde_df,
       aes(x = .data$x, y = .data$y, z = .data$z),
       color = "blue",
       bins = num_bins,
@@ -280,10 +218,10 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
 #' This function creates a scatter plot of PCA-transformed features, highlighting the convex hull of
 #' the original data points. It also classifies new data points as either inside or outside the convex hull.
 #'
-#' @param original_features A matrix of original features transformed by PCA.
+#' @param pca A PCA object loaded from package data.
 #' @param new_features A matrix of new features transformed by PCA.
-#' @param PC_a An integer specifying the first principal component to plot (default: 1).
-#' @param PC_b An integer specifying the second principal component to plot (default: 2).
+#' @param PC_a An integer specifying the first principal component to plot.
+#' @param PC_b An integer specifying the second principal component to plot.
 #'
 #' @return A ggplot2 object representing the PCA scatter plot with a convex hull.
 #'
@@ -291,23 +229,14 @@ pca_plot_with_density <- function(original_features, new_features, explained_var
 #' @importFrom dplyr filter
 #' @importFrom stats runif
 #' @importFrom geometry delaunayn tsearchn
-pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1, PC_b = 2) {
-  if (!is.matrix(original_features) || nrow(original_features) == 0 || ncol(original_features) == 0)
-    stop("original_features must be a non-empty matrix")
-  if (!is.matrix(new_features) || nrow(new_features) == 0 || ncol(new_features) == 0)
-    stop("new_features must be a non-empty matrix")
+pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
+  PC_a <- as.integer(PC_a)
+  PC_b <- as.integer(PC_b)
 
-  if (!is.integer(PC_a) && !is.numeric(PC_a)) stop("PC_a must be an integer")
-  if (!is.integer(PC_b) && !is.numeric(PC_b)) stop("PC_b must be an integer")
-  if (PC_a <= 0 || PC_a > ncol(original_features)) stop("PC_a must be between 1 and the number of columns of original_features")
-  if (PC_b <= 0 || PC_b > ncol(original_features)) stop("PC_b must be between 1 and the number of columns of original_features")
+  original_features <- pca$features_pca
+  jitter_amount <- 1e-10
 
-  jitter_amount = 1e-10
-
-  # --- Data Preparation ---
-  pc1_orig <- original_features[, PC_a]
-  pc2_orig <- original_features[, PC_b]
-  original_points <- data.frame(x = pc1_orig, y = pc2_orig)
+  original_points <- data.frame(x = original_features[, PC_a], y = original_features[, PC_b])
   new_points <- data.frame(x = new_features[, PC_a], y = new_features[, PC_b])
 
   # Convex hull
@@ -319,34 +248,33 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
   # Delaunay triangulation and point-in-hull tests
   unique_original_points <- unique(original_points)
 
-  # Plotting
   if (nrow(unique_original_points) < 3) {
-    stop("Less than 3 unique original points. Cannot form a convex hull.")
-  } else {
-    # Ensure unique_original_points is a matrix
-    unique_original_points <- as.matrix(unique_original_points)
-    delaunay_tri <- delaunayn(unique_original_points, options = "Qt Qbb Qc Qz Q12")
-
-    # Point-in-hull test
-    point_in_hull <- function(x_test, y_test) {
-      test_points <- as.matrix(data.frame(x = x_test, y = y_test)) # Convert to matrix
-      !is.na(tsearchn(unique_original_points, delaunay_tri, test_points)$idx)
-    }
-    inside <- point_in_hull(new_points$x, new_points$y)
-
-    # Data frame for plotting
-    original_df <- data.frame(PC_a = pc1_orig, PC_b = pc2_orig, Type = "Original")
-    new_df <- data.frame(
-      PC_a = new_points$x,
-      PC_b = new_points$y,
-      Type = ifelse(inside, "New (Inside)", "New (Outside)")
-    )
-    plot_data <- rbind(original_df, new_df)
+    stop("Error: Less than 3 unique original points. Cannot form a convex hull.")
   }
+
+  unique_original_points <- as.matrix(unique_original_points)
+  delaunay_tri <- delaunayn(unique_original_points, options = "Qt Qbb Qc Qz Q12")
+
+  # Point-in-hull test
+  point_in_hull <- function(x_test, y_test) {
+    test_points <- as.matrix(data.frame(x = x_test, y = y_test)) # Convert to matrix
+    !is.na(tsearchn(unique_original_points, delaunay_tri, test_points)$idx)
+  }
+  inside <- point_in_hull(new_points$x, new_points$y)
+
+  # Data frame for plotting
+  original_df <- data.frame(PC_a = original_points$x, PC_b = original_points$y, Type = "Original")
+  new_df <- data.frame(
+    PC_a = new_points$x,
+    PC_b = new_points$y,
+    Type = ifelse(inside, "New (Inside)", "New (Outside)")
+  )
+  plot_data <- rbind(original_df, new_df)
 
   original_data <- dplyr::filter(plot_data, .data$Type == "Original")
   new_data <- dplyr::filter(plot_data, .data$Type %in% c("New (Inside)", "New (Outside)"))
 
+  # Plotting
   p <- ggplot() +
     geom_point(data = original_data, aes(x = PC_a, y = PC_b), color = "grey", alpha = 0.5, size = 0.5) +
     geom_point(data = new_data, aes(x = PC_a, y = PC_b, color = .data$Type), alpha = 0.5, size = 0.5) +
@@ -374,7 +302,7 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
 #' styles: target-based ellipses, density contours, or convex hulls.
 #'
 #' @param model A string specifying the model name to load the PCA results from.
-#' @param new_dataset An array or list containing the new dataset to transform using PCA.
+#' @param your_data An array or list containing the new dataset to transform using PCA.
 #' @param num_pcs An integer specifying the number of principal components to consider.
 #' @param plot_type A string specifying the type of plot: `"target"`, `"density"`, or `"convexhull"`.
 #' @param num_ellipses An integer specifying the number of ellipses for the `"target"` plot type (default: 3).
@@ -386,32 +314,34 @@ pca_plot_with_convex_hull <- function(original_features, new_features, PC_a = 1,
 #' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
 #'
 #' @export
-diagnostic_pca <- function(model="base_cnn", new_dataset, num_pcs, plot_type, num_ellipses=3, num_bins= 3) {
-  if (!is.character(model)) {
-    stop("Error: 'model' must be a character string.")
-  }
+diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_ellipses=3, num_bins= 3) {
+  check_valid_package_data(model, pca = TRUE)
+  check_valid_data(your_data, images = TRUE, filenames = FALSE)
 
-  # Check loaded pca_results object
+  # Load and check pca object
   pca <- load_result_pca(model)
+  check_valid_pca(pca, features_pca = TRUE, explained_variance = FALSE, principal_components = FALSE, center = FALSE)
 
-  # Transform new data using PCA
-  new_features <- pca_transform(new_dataset, pca)
-
-  # Check features and explained variance
-  original_features <- pca$features_pca
-  explained_variance <- pca$explained_variance
+  # Input checks
   if (!is.numeric(num_pcs) || num_pcs <= 1 || num_pcs > ncol(pca$features_pca)) {
-    stop("Error: 'num_pcs' must be a numeric value greater than 1 and less than or equal to the number of available principal components.")
+    stop(paste0("Error: 'num_pcs' must be a numeric value greater than 1 and less than or equal to the number of available principal components: ", ncol(pca$features_pca)))
   }
   if (!is.character(plot_type) || !plot_type %in% c("target", "density", "convexhull")) {
     stop("Error: 'plot_type' must be one of 'target', 'density', or 'convexhull'.")
   }
-  if (!is.numeric(num_ellipses) || num_ellipses < 1) {
-    stop("Error: 'num_ellipses' must be a positive integer.")
+  if (plot_type == "target") {
+    if (!is.numeric(num_ellipses) || num_ellipses < 1) {
+      stop("Error: 'num_ellipses' must be a positive integer for plot type 'target'.")
+    }
   }
-  if (!is.numeric(num_bins) || num_bins < 1) {
-    stop("Error: 'num_bins' must be a positive integer.")
+  if (plot_type == "density") {
+    if (!is.numeric(num_bins) || num_bins < 1) {
+      stop("Error: 'num_bins' must be a positive integer for plot type 'convexhull'.")
+    }
   }
+
+  # Transform new data using PCA
+  new_features <- pca_transform(your_data, pca)
 
   # Generate all possible PC combinations
   generate_pc_combinations <- function(num_pcs) {
@@ -420,62 +350,59 @@ diagnostic_pca <- function(model="base_cnn", new_dataset, num_pcs, plot_type, nu
     return(combinations)
   }
 
-  # Generate combinations
+  # Generate grid
   plot_combinations <- generate_pc_combinations(num_pcs)
 
-  # Create list of plots
-  # Lookup table to call the appropriate plotting function based on plot_type
+  # Generate list of plots
   plot_list <- lapply(seq_len(nrow(plot_combinations)), function(i) {
     PC_a <- plot_combinations[i, "PC_a"]
     PC_b <- plot_combinations[i, "PC_b"]
 
     if (plot_type == "target") {
-      return(pca_plot_with_target(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_ellipses))
+      return(pca_diagnostic_target(pca, new_features, PC_a, PC_b, num_ellipses))
     } else if (plot_type == "density") {
-      return(pca_plot_with_density(original_features, new_features, explained_variance, PC_a, PC_b, num_pcs, num_bins))
+      return(pca_diagnostic_density(pca, new_features, PC_a, PC_b, num_bins))
     } else if (plot_type == "convexhull") {
-      return(pca_plot_with_convex_hull(original_features, new_features, PC_a, PC_b))
+      return(pca_diagnostic_convexhull(pca, new_features, PC_a, PC_b))
     }
   })
 
-  create_full_plot_grid <- function(plot_list, num_pcs, explained_variance, plot_combinations) {
+  # Fill in all plots on grid
+  create_full_plot_grid <- function(plot_list, plot_combinations, num_pcs, explained_variance) {
     full_grid <- matrix(list(NULL), nrow = num_pcs, ncol = num_pcs)
 
     for (i in seq_len(nrow(plot_combinations))) {
       pc_a <- plot_combinations[i, "PC_a"]
       pc_b <- plot_combinations[i, "PC_b"]
 
-      # Insert the scatter plot in the original position
+      # Insert the scatter
       full_grid[[pc_a, pc_b]] <- plot_list[[i]]
 
-      # Compute explained variance sum
+      # Insert the explained variance circle in mirrored position
       total_variance <- explained_variance[pc_a] + explained_variance[pc_b]
 
-      # Create a circle plot in the mirrored position
       circle_plot <- ggplot(data.frame(x = 1, y = 1, size = total_variance, label = paste0(round(total_variance * 100, 1), "%"))) +
         geom_point(aes(x = .data$x, y = .data$y, size = .data$size), shape = 21, fill = "blue", color = "black") +
         scale_size_continuous(
-          range = c(1, 20),  # Adjust the range for circle sizes
-          limits = c(0, 1)   # Ensure variance scales from 0 to 1
+          range = c(1, 20),
+          limits = c(0, 1)
         ) +
         geom_text(
           aes(x = .data$x, y = .data$y + 0.75, label = .data$label),
-          size = 4,  # Adjust text size
-          color = "black"  # Set text color for visibility
+          size = 4,
+          color = "black"
         ) +
         theme_void() + theme(legend.position = "none") +
         coord_cartesian(clip = "off") +
         ylim(0, 1.75)
 
-      # Insert circle in mirrored position
       full_grid[[pc_b, pc_a]] <- circle_plot
     }
 
     return(full_grid)
   }
 
-  # Create full plot grid
-  full_plot_grid <- create_full_plot_grid(plot_list, num_pcs, explained_variance, plot_combinations)
+  full_plot_grid <- create_full_plot_grid(plot_list, plot_combinations, num_pcs, pca$explained_variance)
 
   # Create combined plot
   combined_plot <- cowplot::ggdraw() +
@@ -487,10 +414,10 @@ diagnostic_pca <- function(model="base_cnn", new_dataset, num_pcs, plot_type, nu
         align = 'none',
         axis = 'tblr'
       ),
-      x = 0.05,     # Move plot right
-      y = 0.05,     # Move plot up
-      width = 0.9, # Adjust plot width
-      height = 0.9 # Adjust plot height
+      x = 0.05,
+      y = 0.05,
+      width = 0.9,
+      height = 0.9
     ) +
     # Add shared x-axis principal component label
     cowplot::draw_label(
@@ -508,9 +435,9 @@ diagnostic_pca <- function(model="base_cnn", new_dataset, num_pcs, plot_type, nu
       size = 10
     )
 
-  # Add x-axis tick labels at precise coordinates
+  # Add x-axis tick labels
   for (i in seq_len(num_pcs)) {
-    x_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9  # Adjust x position relative to plot width
+    x_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9
     combined_plot <- combined_plot +
       cowplot::draw_label(
         as.character(i),
@@ -520,9 +447,9 @@ diagnostic_pca <- function(model="base_cnn", new_dataset, num_pcs, plot_type, nu
       )
   }
 
-  # Add y-axis tick labels at precise coordinates
+  # Add y-axis tick labels
   for (i in seq_len(num_pcs)) {
-    y_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9  # Adjust y position relative to plot height
+    y_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9
     combined_plot <- combined_plot +
       cowplot::draw_label(
         as.character(i),
@@ -532,6 +459,7 @@ diagnostic_pca <- function(model="base_cnn", new_dataset, num_pcs, plot_type, nu
         size = 10
       )
   }
+
   # Add legend
   combined_plot <- combined_plot +
     cowplot::draw_plot(

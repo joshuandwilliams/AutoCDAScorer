@@ -6,7 +6,7 @@
 \usage{
 diagnostic_pca(
   model = "base_cnn",
-  new_dataset,
+  your_data,
   num_pcs,
   plot_type,
   num_ellipses = 3,
@@ -16,8 +16,6 @@ diagnostic_pca(
 \arguments{
 \item{model}{A string specifying the model name to load the PCA results from.}
 
-\item{new_dataset}{An array or list containing the new dataset to transform using PCA.}
-
 \item{num_pcs}{An integer specifying the number of principal components to consider.}
 
 \item{plot_type}{A string specifying the type of plot: \code{"target"}, \code{"density"}, or \code{"convexhull"}.}
@@ -25,6 +23,8 @@ diagnostic_pca(
 \item{num_ellipses}{An integer specifying the number of ellipses for the \code{"target"} plot type (default: 3).}
 
 \item{num_bins}{An integer specifying the number of bins for the \code{"density"} plot type (default: 3).}
+
+\item{new_dataset}{An array or list containing the new dataset to transform using PCA.}
 }
 \value{
 A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
