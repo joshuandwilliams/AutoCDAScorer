@@ -86,9 +86,7 @@ target_plot <- diagnostic_pca(
   num_ellipses = 3
 )
 target_plot
-```
 
-```{r}
 contour_plot <- diagnostic_pca(
   "base_cnn",
   new_dataset,
@@ -97,9 +95,7 @@ contour_plot <- diagnostic_pca(
   num_bins = 5
 )
 contour_plot
-```
 
-```{r}
 convexhull_plot <- diagnostic_pca(
   "base_cnn",
   new_dataset,

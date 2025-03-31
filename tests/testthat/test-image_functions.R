@@ -90,22 +90,21 @@ test_that("crop_and_load_images invalid input types", {
 
 test_that("crop_and_load_images invalid coordinates", {
   temp_dir <- tempdir()
-  temp_path <- file.path(temp_dir, "image1.png")
-
+  temp_path_img <- file.path(temp_dir, "image1.png")
+  temp_path_csv <- file.path(temp_dir, "cdascorer.csv")
   # Small dummy test image (30x30)
   image1 <- array(stats::runif(30*30*3), dim=c(30,30,3))
-  png::writePNG(image1, temp_path)
-
+  png::writePNG(image1, temp_path_img)
   cdascorer <- data.frame(
-    img = c(temp_path),
+    img = c(temp_path_img),
     x1 = c(10), x2 = c(50),
     y1 = c(5), y2 = c(40),
     row = c(1), col = c(1), pos = c(1)
   ) # x2 and y2 are out of bounds
-
-  expect_error(crop_and_load_images(cdascorer, image_size = 64))
-
-  unlink(temp_path)
+  write.csv(cdascorer, temp_path_csv, row.names = FALSE)
+  expect_error(crop_and_load_images(temp_path_csv, image_size = 64))
+  unlink(temp_path_img)
+  unlink(temp_path_csv)
 })
 
 create_mock_image_dir <- function() {
@@ -194,6 +193,40 @@ test_that("load_images invalid images", {
   expect_error(load_images(data_dir, 64), "Error: No images were loaded. Please check the directory or file types.")
 
   unlink(tif_files)
+  fs::dir_delete(data_dir)
+})
+
+test_that("load_images single non-square image", {
+  temp_dir <- tempdir()
+  data_dir <- file.path(temp_dir, "test_data")
+  fs::dir_create(data_dir)
+  tif_file <- file.path(data_dir, "image1.tif")
+  fs::file_create(tif_file)
+
+  # Mocks and stubs
+  mock_imread <- mockery::mock(
+    magick::image_blank(width = 100, height = 50, color = "white") # Non-square
+  )
+  mock_resize <- mockery::mock(
+    magick::image_blank(width = 64, height = 64, color = "white")
+  )
+  mockery::stub(load_images, "magick::image_read", mock_imread)
+  mockery::stub(load_images, "magick::image_resize", mock_resize)
+
+  # Load mock data
+  result <- load_images(data_dir, 64)
+
+  expect_equal(length(dim(result$images)), 4) # n_dims
+  expect_equal(dim(result$images)[1], 1)    # n_images
+  expect_equal(length(result$filenames), 1) # n_filepaths
+  expect_equal(dim(result$images)[2:4], c(64, 64, 3)) # Expect to be resized to 64x64
+
+  expect_equal(result$filenames, "image1.tif")
+
+  # Check the shape of the loaded image after resizing
+  expect_equal(dim(result$images)[2:3], c(64, 64))
+
+  unlink(tif_file)
   fs::dir_delete(data_dir)
 })
 
