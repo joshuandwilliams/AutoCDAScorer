@@ -15,6 +15,9 @@ test_that("check_valid_data valid inputs", {
 })
 
 test_that("check_valid_data invalid inputs", {
+  not_list <- "not_list"
+  expect_error(check_valid_data(not_list, images=TRUE, filenames=TRUE), "Error: 'data' must be a list")
+
   no_images <- list(filenames = paste0("image_", seq_len(10), ".jpg"))
   expect_error(check_valid_data(no_images, images=TRUE, filenames=TRUE), "Error: 'data' must contain an 'images' element")
 
