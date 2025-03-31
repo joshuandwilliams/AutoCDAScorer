@@ -33,7 +33,7 @@ load_cdascorer_dataframe <- function(path) {
 #'
 #' @param input_path A string representing the filepath of a CDAScorer CSV.
 #' @param image_size An integer for the resizing of loaded images. Default is 64.
-#' @param path A string representing the directory where the cropped images should be saved. If NULL, images are not saved.
+#' @param output_path A string representing the directory where the cropped images should be saved. If NULL, images are not saved.
 #'
 #' @return A list containing:
 #' - `images`: a 4D array of cropped images.

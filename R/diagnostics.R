@@ -278,7 +278,7 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
   p <- ggplot() +
     geom_point(data = original_data, aes(x = PC_a, y = PC_b), color = "grey", alpha = 0.5, size = 0.5) +
     geom_point(data = new_data, aes(x = PC_a, y = PC_b, color = .data$Type), alpha = 0.5, size = 0.5) +
-    scale_color_manual(values = c("New (Inside)" = "green", "New (Outside)" = "red")) +
+    scale_color_manual(values = c("New (Inside)" = "blue", "New (Outside)" = "red")) +
     {if(nrow(hull_points) > 0) geom_polygon(data = hull_points, aes(x = .data$x, y = .data$y), fill = NA, color = "black", alpha = 0.5, linetype = "solid")} +
     theme_minimal() +
     theme(
@@ -415,9 +415,9 @@ diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_
         axis = 'tblr'
       ),
       x = 0.05,
-      y = 0.05,
+      y = 0.06,
       width = 0.9,
-      height = 0.9
+      height = 0.85
     ) +
     # Add shared x-axis principal component label
     cowplot::draw_label(
@@ -442,14 +442,14 @@ diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_
       cowplot::draw_label(
         as.character(i),
         x = x_pos,
-        y = 0.04,
+        y = 0.06,
         size = 10
       )
   }
 
   # Add y-axis tick labels
   for (i in seq_len(num_pcs)) {
-    y_pos <- 0.05 + ((i - 0.5) / num_pcs) * 0.9
+    y_pos <- 0.06 + ((i - 0.5) / num_pcs) * 0.85
     combined_plot <- combined_plot +
       cowplot::draw_label(
         as.character(i),
@@ -461,9 +461,34 @@ diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_
   }
 
   # Add legend
-  combined_plot <- combined_plot +
-    cowplot::draw_plot(
-      ggplot() +
+  create_conditional_legend <- function(plot_type) {
+    if (plot_type == "convexhull") {
+      legend_plot <- ggplot() +
+        geom_point(
+          aes(x = 1, y = 0.5, color = "Original"),
+          size = 3, alpha = 0
+        ) +
+        geom_point(
+          aes(x = 2, y = 0.5, color = "New (inside)"),
+          size = 3, alpha = 0
+        ) +
+        geom_point(
+          aes(x = 3, y = 0.5, color = "New (outside)"),
+          size = 3, alpha = 0
+        ) +
+        scale_color_manual(
+          values = c("Original" = "grey", "New (inside)" = "blue", "New (outside)" = "red")
+        ) +
+        theme_void() +
+        theme(
+          legend.position = "bottom",
+          legend.title = element_blank()
+        ) +
+        guides(
+          color = guide_legend(override.aes = list(size = 5, alpha = 1), nrow = 1)
+        )
+    } else {
+      legend_plot <- ggplot() +
         geom_point(
           aes(x = 1, y = 0.5, color = "Original"),
           size = 3, alpha = 0
@@ -481,11 +506,21 @@ diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_
           legend.title = element_blank()
         ) +
         guides(
-          color = guide_legend(override.aes = list(size = 5, alpha = 1))
-        ),
+          color = guide_legend(override.aes = list(size = 5, alpha = 1), nrow = 1)
+        )
+    }
+    return(legend_plot)
+  }
+
+  # Assuming 'combined_plot' is your main plot object and 'plot_type' is a variable
+  conditional_legend <- create_conditional_legend(plot_type)
+
+  combined_plot <- combined_plot +
+    cowplot::draw_plot(
+      conditional_legend,
       x = 0.4,
       y = 0.95,
-      width = 0.2,
+      width = 0.35, # Adjusted width to accommodate the extra item
       height = 0.05
     )
 
