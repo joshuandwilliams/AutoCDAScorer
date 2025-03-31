@@ -11,7 +11,7 @@ crop_and_load_images(input_path, image_size = 64, output_path = NULL)
 
 \item{image_size}{An integer for the resizing of loaded images. Default is 64.}
 
-\item{path}{A string representing the directory where the cropped images should be saved. If NULL, images are not saved.}
+\item{output_path}{A string representing the directory where the cropped images should be saved. If NULL, images are not saved.}
 }
 \value{
 A list containing:

@@ -6,6 +6,8 @@
 <!-- badges: start -->
 
 [![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer)
+[![R CMD
+check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yml)
 [![tensorflow
 version](https://img.shields.io/badge/tensorflow-v2.16.2-orange)](https://www.tensorflow.org/)
 [![python
