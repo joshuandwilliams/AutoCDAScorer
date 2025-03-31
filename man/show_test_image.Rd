@@ -2,12 +2,12 @@
 % Please edit documentation in R/image_functions.R
 \name{show_test_image}
 \alias{show_test_image}
-\title{Display a Test Image from the Dataset}
+\title{Display a test image from the dataset}
 \usage{
-show_test_image(dataset)
+show_test_image(data)
 }
 \arguments{
-\item{dataset}{A list containing an \code{images} array. The first image in the array will be displayed.}
+\item{data}{A list containing an \code{images} array. The first image in the array will be displayed.}
 }
 \value{
 A visual output of the first image in the dataset.

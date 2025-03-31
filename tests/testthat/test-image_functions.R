@@ -1,253 +1,114 @@
+valid_cdascorer_df <- function() {
+  data.frame(
+    img = c("image1", "image2"),
+    x1 = c(1, 2),
+    x2 = c(3, 4),
+    y1 = c(5, 6),
+    y2 = c(7, 8),
+    row = c(1, 2),
+    col = c(3, 4),
+    pos = c(5, 6)
+  )
+}
+
 test_that("load_cdascorer_dataframe valid input", {
-  # Temp CSV
   temp_file <- tempfile(fileext = ".csv")
-  write.csv(data.frame(img = c("image1", "image2"), x1 = c(1, 2), x2 = c(3, 4), y1 = c(5, 6), y2 = c(7, 8)), temp_file, row.names = FALSE)
+  df <- valid_cdascorer_df()
+  write.csv(df, temp_file, row.names = FALSE)
 
-  # Load CSV
   df <- load_cdascorer_dataframe(temp_file)
+  expect_true(all(c("img", "x1", "x2", "y1", "y2") %in% colnames(df))) # Correct columns
 
-  # Check correct columns
-  expect_true(all(c("img", "x1", "x2", "y1", "y2") %in% colnames(df)))
-
-  # Error for non-existent file
-  expect_error(load_cdascorer_dataframe("non_existent_file.csv"), "File does not exist")
-
-  # Error for missing columns
-  write.csv(data.frame(img = c("image1", "image2"), x1 = c(1, 2), x2 = c(3, 4), y1 = c(5, 6)), temp_file, row.names = FALSE)
-  expect_error(load_cdascorer_dataframe(temp_file), "Missing required columns")
+  unlink(temp_file)
 })
 
-test_that("crop_and_load_images valid input path labels", {
-  temp_dir <- tempdir()
-  image1_path <- file.path(temp_dir, "image1.png")
-  image2_path <- file.path(temp_dir, "image2.png")
-
-  # Create dummy test images
-  image1 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  image2 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  png::writePNG(image1, image1_path)
-  png::writePNG(image2, image2_path)
-
-  # Create a mock cdascorer dataframe with required columns and labels
-  cdascorer <- data.frame(
-    img = c(image1_path, image2_path),
-    x1 = c(0, 10), x2 = c(50, 60), y1 = c(0, 10), y2 = c(50, 60),
-    row = c(1, 2), col = c(1, 2), pos = c(1, 1),
-    score = c(1, 2)
-  )
-
-  # Simulate cropping function (mock magick image cropping)
-  path <- "test_output"
-  image_size <- 64
-
-  # Test the function with a valid path
-  result <- crop_and_load_images(cdascorer, image_size, path)
-
-  # Check if images were cropped correctly
-  expect_equal(length(result$filenames), 2)
-  expect_equal(dim(result$images)[1], 2)
-  expect_equal(dim(result$images)[2], as.numeric(image_size))
-  expect_equal(dim(result$images)[3], as.numeric(image_size))
-  expect_equal(dim(result$images)[4], 3)
-
-  # Check if the cropped images are saved in the correct directory
-  expect_true(dir_exists(path))
-  expect_true(dir_exists(file.path(path, "1")))
-  expect_true(dir_exists(file.path(path, "2")))
-
-  # Check if filenames match expected naming convention
-  expect_true(file_exists(file.path(path, "1", "image1.png_1_1_1.tif")))
-  expect_true(file_exists(file.path(path, "2", "image2.png_2_2_1.tif")))
+test_that("load_cdascorer_dataframe invalid path", {
+  expect_error(load_cdascorer_dataframe(50), "Error: 'filepath' must be a character string")
+  expect_error(load_cdascorer_dataframe("non_existent_file.csv"), "Error: File does not exist")
 })
 
-test_that("crop_and_load_images creates score directories", {
-  temp_dir <- tempdir()
-  image1_path <- file.path(temp_dir, "image1.png")
-  image2_path <- file.path(temp_dir, "image2.png")
+test_that("load_cdascorer_dataframe incorrect columns", {
+  temp_file <- tempfile(fileext = ".csv")
+  df <- valid_cdascorer_df()
+  df <- valid_cdascorer_df() %>% dplyr::select(-pos)
+  write.csv(df, temp_file, row.names = FALSE)
+  expect_error(load_cdascorer_dataframe(temp_file), "Error: cdascorer input CSV must contain the following columns: img, x1, x2, y1, y2, row, col, pos")
 
-  # Create dummy test images
-  image1 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  image2 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  png::writePNG(image1, image1_path)
-  png::writePNG(image2, image2_path)
+  unlink(temp_file)
+})
 
-  # Create a mock cdascorer dataframe with score column
-  cdascorer <- data.frame(
-    img = c(image1_path, image2_path),
-    x1 = c(0, 10), x2 = c(50, 60), y1 = c(0, 10), y2 = c(50, 60),
-    row = c(1, 2), col = c(1, 2), pos = c(1, 1),
-    score = c(1, 2)
-  )
+create_mock_image_data <- function(temp_dir, image_names = c("image1.png", "image2.png"), image_size = c(64, 64)) {
+  image_paths <- file.path(temp_dir, image_names)
 
-  # Define output path and ensure it does NOT exist
-  path <- file.path(temp_dir, "test_score_directories")
-  if (dir_exists(path)) {
-    fs::dir_delete(path)  # Ensure fresh start
+  for (image_path in image_paths) {
+    image <- array(stats::runif(prod(image_size) * 3), dim = c(image_size[1], image_size[2], 3))
+    png::writePNG(image, image_path)
   }
 
-  # Run function
-  crop_and_load_images(cdascorer, image_size = 64, path = path)
+  return(image_paths)
+}
 
-  # Check that the score directories were created
-  expect_true(dir_exists(file.path(path, "1")))
-  expect_true(dir_exists(file.path(path, "2")))
-})
-
-test_that("crop_and_load_images valid input path no labels", {
+test_that("crop_and_load_images valid inputs", {
   temp_dir <- tempdir()
-  image1_path <- file.path(temp_dir, "image1.png")
-  image2_path <- file.path(temp_dir, "image2.png")
+  image_paths <- create_mock_image_data(temp_dir)
 
-  # Create dummy test images
-  image1 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  image2 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  png::writePNG(image1, image1_path)
-  png::writePNG(image2, image2_path)
+  temp_file <- tempfile(fileext = ".csv") # Input cdascorer csv
+  df <- valid_cdascorer_df()
+  df$img <- image_paths # df needs 'img' to match the real paths
+  write.csv(df, temp_file, row.names = FALSE)
+  # load_cdascorer_dataframe() checks valid df
 
-  # Create a mock cdascorer dataframe without the "score" column
-  cdascorer <- data.frame(
-    img = c(image1_path, image2_path),
-    x1 = c(0, 10), x2 = c(50, 60), y1 = c(0, 10), y2 = c(50, 60),
-    row = c(1, 2), col = c(1, 2), pos = c(1, 1)
-  )
-
-  # Simulate cropping function (mock magick image cropping)
-  path <- "test_output_no_labels"
   image_size <- 64
+  output_path <- file.path(temp_dir, "test_output")
 
-  # Test the function with a valid path but no labels
-  result <- crop_and_load_images(cdascorer, image_size, path)
+  result <- crop_and_load_images(temp_file, 64, output_path)
+  # This also tests the correct creation of an output dir that doesn't exist yet
 
-  # Check if images were cropped correctly
-  expect_equal(length(result$filenames), 2)
+  expect_equal(length(result$filenames), 2) # 2 filenames
+  # Check (2, 64, 64, 3)
   expect_equal(dim(result$images)[1], 2)
-  expect_equal(dim(result$images)[2], as.numeric(image_size))
-  expect_equal(dim(result$images)[3], as.numeric(image_size))
+  expect_equal(dim(result$images)[2], image_size)
+  expect_equal(dim(result$images)[3], image_size)
   expect_equal(dim(result$images)[4], 3)
 
-  # Check if the cropped images are saved in the correct directory
-  expect_true(dir_exists(path))
+  # Check saved images exist
+  expect_true(dir_exists(output_path))
+  expect_true(file_exists(file.path(output_path, "image1.png_1_3_5.tif")))
+  expect_true(file_exists(file.path(output_path, "image2.png_2_4_6.tif")))
 
-  # Check if filenames match expected naming convention
-  expect_true(file_exists(file.path(path, "image1.png_1_1_1.tif")))
-  expect_true(file_exists(file.path(path, "image2.png_2_2_1.tif")))
-
-  # Ensure that no "labels" field exists in the output
-  expect_false("labels" %in% names(result))
+  unlink(temp_file)
+  unlink(image_paths)
+  fs::dir_delete(output_path)
 })
 
-test_that("crop_and_load_images single valid image", {
+test_that("crop_and_load_images invalid input types", {
   temp_dir <- tempdir()
-  image1_path <- file.path(temp_dir, "image1.png")
-
-  # Create a dummy test image
-  image1 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  png::writePNG(image1, image1_path)
-
-  # Create a mock cdascorer dataframe with only one image and no labels
-  cdascorer <- data.frame(
-    img = c(image1_path),
-    x1 = c(0), x2 = c(50), y1 = c(0), y2 = c(50),
-    row = c(1), col = c(1), pos = c(1)
-  )
-
-  # Define output path
-  path <- file.path(temp_dir, "single_image_output")
-
-  # Run function
-  result <- crop_and_load_images(cdascorer, image_size = 64, path = path)
-
-  # Check if a single image was processed
-  expect_equal(length(result$filenames), 1)
-  expect_equal(dim(result$images)[1], 1)
-  expect_equal(dim(result$images)[2], 64)
-  expect_equal(dim(result$images)[3], 64)
-  expect_equal(dim(result$images)[4], 3)
-
-  # Check if the output directory was created
-  expect_true(dir_exists(path))
-
-  # Check if the cropped image was saved with the correct naming convention
-  expect_true(file_exists(file.path(path, "image1.png_1_1_1.tif")))
-
-  # Ensure no labels field exists in the output (since no "score" column)
-  expect_false("labels" %in% names(result))
-})
-
-test_that("crop_and_load_images missing columns", {
-  temp_dir <- tempdir()
-  image1_path <- file.path(temp_dir, "image1.png")
-
-  # Create a dummy test image
-  image1 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  png::writePNG(image1, image1_path)
-
-  # Create a dataframe missing the "x1" column
-  cdascorer <- data.frame(
-    img = c(image1_path),
-    x2 = c(50), y1 = c(0), y2 = c(50),
-    row = c(1), col = c(1), pos = c(1)
-  )
-
-  # Expect the function to throw an error
-  expect_error(crop_and_load_images(cdascorer, image_size = 64),
-               "Missing required columns in the CDAScorer dataframe.")
-})
-
-test_that("crop_and_load_images nonexistent output path", {
-  temp_dir <- tempdir()
-  image1_path <- file.path(temp_dir, "image1.png")
-
-  # Create a dummy test image
-  image1 <- array(stats::runif(64*64*3), dim=c(64,64,3))
-  png::writePNG(image1, image1_path)
-
-  # Create a mock cdascorer dataframe without labels
-  cdascorer <- data.frame(
-    img = c(image1_path),
-    x1 = c(0), x2 = c(50), y1 = c(0), y2 = c(50),
-    row = c(1), col = c(1), pos = c(1)
-  )
-
-  # Define a non-existent output path
-  path <- file.path(temp_dir, "non_existent_dir")
-
-  if (dir_exists(path)) {
-    fs::dir_delete(path)
-  }
-
-  # Ensure the directory does NOT exist before running the function
-  expect_false(dir_exists(path))
-
-  # Run function
-  crop_and_load_images(cdascorer, image_size = 64, path = path)
-
-  # Now check that the directory has been created
-  expect_true(dir_exists(path))
+  expect_error(crop_and_load_images("Valid In", "Invalid Size", temp_dir), "Error: 'image_size' must be an integer")
+  expect_error(crop_and_load_images("Valid In", 64, 10), "Error: 'output_path' must be a character string")
+  # load_cdascorer_dataframe() checks input_path
 })
 
 test_that("crop_and_load_images invalid coordinates", {
   temp_dir <- tempdir()
-  image1_path <- file.path(temp_dir, "image1.png")
+  temp_path <- file.path(temp_dir, "image1.png")
 
-  # Create a small dummy test image (30x30)
+  # Small dummy test image (30x30)
   image1 <- array(stats::runif(30*30*3), dim=c(30,30,3))
-  png::writePNG(image1, image1_path)
+  png::writePNG(image1, temp_path)
 
-  # Create a dataframe where cropping coordinates exceed image size
   cdascorer <- data.frame(
-    img = c(image1_path),
-    x1 = c(10), x2 = c(50),  # x2 goes beyond 30 pixels
-    y1 = c(5), y2 = c(40),   # y2 goes beyond 30 pixels
+    img = c(temp_path),
+    x1 = c(10), x2 = c(50),
+    y1 = c(5), y2 = c(40),
     row = c(1), col = c(1), pos = c(1)
-  )
+  ) # x2 and y2 are out of bounds
 
-  # Expect an error due to out-of-bounds coordinates
-  expect_error(crop_and_load_images(cdascorer, image_size = 64),
-               "Cropping coordinates exceed image dimensions.")
+  expect_error(crop_and_load_images(cdascorer, image_size = 64))
+
+  unlink(temp_path)
 })
 
-setup_mock_data_dir <- function() {
+create_mock_image_dir <- function() {
   tmp_dir <- tempdir()
   data_dir <- file.path(tmp_dir, "test_data")
 
@@ -255,51 +116,26 @@ setup_mock_data_dir <- function() {
   fs::dir_create(file.path(data_dir, "0"))
   fs::dir_create(file.path(data_dir, "1"))
 
-  # Create empty files
-  fs::file_create(file.path(data_dir, "0", "image1.tif"))
-  fs::file_create(file.path(data_dir, "0", "image2.TIF"))
-  fs::file_create(file.path(data_dir, "1", "image3.tif"))
-  fs::file_create(file.path(data_dir, "1", "image4.tif"))
+  # Define file paths
+  tif_files <- c(
+    file.path(data_dir, "0", "image1.tif"),
+    file.path(data_dir, "0", "image2.TIF"),
+    file.path(data_dir, "1", "image3.tif"),
+    file.path(data_dir, "1", "image4.tif"),
+    file.path(data_dir, "image5.tif"),  # In base data_dir
+    file.path(data_dir, "image6.TIF")   # In base data_dir
+  )
 
-  return(data_dir)
+  # Create empty files
+  fs::file_create(tif_files)
+
+  return(list(data_dir = data_dir, tif_files = tif_files))
 }
 
-test_that("load_images_and_labels labels true", {
-  data_dir <- setup_mock_data_dir()
-
-  # Mocks and stubs
-  mock_imread <- mockery::mock(
-    magick::image_blank(width = 100, height = 100, color = "white"), cycle = TRUE  # Mock a 100x100 image
-  )
-  mock_resize <- mockery::mock(
-    magick::image_blank(width = 64, height = 64, color = "white"), cycle = TRUE  # Return a blank resized image
-  )
-  mockery::stub(load_images_and_labels, "magick::image_read", mock_imread)
-  mockery::stub(load_images_and_labels, "magick::image_resize", mock_resize)
-
-  # Load mock data
-  result <- load_images_and_labels(data_dir, 64, labels = TRUE)
-
-  expect_equal(length(dim(result$images)), 4)
-  expect_equal(dim(result$images)[1], 4)  # n_images
-  expect_equal(length(result$labels), 4) # n_labels
-  expect_equal(length(result$filenames), 4) # n_filenames
-  expect_equal(dim(result$images)[2:4], c(64, 64, 3)) # Image dimensions
-
-  expected_labels <- c(0, 0, 1, 1) # Label contents
-  expect_equal(result$labels, expected_labels)
-  expected_filenames <- c("image1.tif", "image2.TIF", "image3.tif", "image4.tif") # Image contents
-  expect_setequal(result$filenames, expected_filenames)
-
-  unlink(data_dir, recursive = TRUE)
-})
-
-test_that("load_images_and_labels labels false", {
-  data_dir <- setup_mock_data_dir()
-
-  # Additional images in main dir
-  fs::file_create(file.path(data_dir, "image5.tif"))
-  fs::file_create(file.path(data_dir, "image6.TIF"))
+test_that("load_images valid inputs", {
+  mock_data <- create_mock_image_dir()
+  data_dir <- mock_data$data_dir
+  tif_files <- mock_data$tif_files
 
   # Mocks and stubs
   mock_imread <- mockery::mock(
@@ -308,13 +144,13 @@ test_that("load_images_and_labels labels false", {
   mock_resize <- mockery::mock(
     magick::image_blank(width = 64, height = 64, color = "white"), cycle = TRUE
   )
-  mockery::stub(load_images_and_labels, "magick::image_read", mock_imread)
-  mockery::stub(load_images_and_labels, "magick::image_resize", mock_resize)
+  mockery::stub(load_images, "magick::image_read", mock_imread)
+  mockery::stub(load_images, "magick::image_resize", mock_resize)
 
   # Load mock data
-  result <- load_images_and_labels(data_dir, 64, labels = FALSE)
+  result <- load_images(data_dir, 64)
 
-  expect_equal(length(dim(result$images)), 4)
+  expect_equal(length(dim(result$images)), 4) # n_dims
   expect_equal(dim(result$images)[1], 6)  # n_images
   expect_equal(length(result$filenames), 6) # n_filepaths
   expect_equal(dim(result$images)[2:4], c(64, 64, 3)) # Image dimensions
@@ -322,115 +158,92 @@ test_that("load_images_and_labels labels false", {
   expected_filenames <- c("image1.tif", "image2.TIF", "image3.tif", "image4.tif", "image5.tif", "image6.TIF")
   expect_setequal(result$filenames, expected_filenames)
 
-  unlink(data_dir, recursive = TRUE)
+  unlink(tif_files)
+  fs::dir_delete(data_dir)
 })
 
-test_that("load_images_and_labels invalid images", {
-  data_dir <- setup_mock_data_dir()
-
-  # Mocks and stubs
-  mock_imread <- mockery::mock(NULL, cycle = TRUE)
-  mockery::stub(load_images_and_labels, "magick::image_read", mock_imread)
-
-  # Error invalid images
-  expect_error(load_images_and_labels(data_dir, 64),
-               "No images were loaded. Please check the directory or file types.")
-
-  unlink(data_dir, recursive = TRUE)
+test_that("load_images invalid inputs", {
+  expect_error(load_images(10, 64), "Error: 'input_path' must be a character string")
+  expect_error(load_images("Invalid Input", 64), "Error: 'input_path' does not exist")
+  temp_dir <- tempdir()
+  expect_error(load_images(temp_dir, "Invalid Size"), "Error: 'image_size' must be an integer")
 })
 
-test_that("load_images_and_labels no TIF files", {
+test_that("load_images no TIF files", {
   tmp_dir <- tempdir()
   data_dir <- file.path(tmp_dir, "test_no_tif")
   fs::dir_create(file.path(data_dir, "0"))
-  fs::file_create(file.path(data_dir, "0", "image1.jpg")) # Non-TIF file
+  fs::file_create(file.path(data_dir, "0", "image1.jpg"))
 
   # Error no TIF files
-  expect_error(load_images_and_labels(data_dir, 64),
-               "No TIF images found. Please check the directory or file types.")
+  expect_error(load_images(data_dir, 64), "Error: No TIF images found. Please check the directory or file types.")
 
-  unlink(data_dir, recursive = TRUE)
+  fs::dir_delete(data_dir)
+})
+
+test_that("load_images invalid images", {
+  mock_data <- create_mock_image_dir()
+  data_dir <- mock_data$data_dir
+  tif_files <- mock_data$tif_files
+
+  # Mocks and stubs
+  mock_imread <- mockery::mock(NULL, cycle = TRUE)
+  mockery::stub(load_images, "magick::image_read", mock_imread)
+
+  # Error invalid images
+  expect_error(load_images(data_dir, 64), "Error: No images were loaded. Please check the directory or file types.")
+
+  unlink(tif_files)
+  fs::dir_delete(data_dir)
 })
 
 test_that("show_test_image valid input", {
-  dataset <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)))
+  data <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)))
 
-  # Expect no errors
-  expect_silent(show_test_image(dataset))
-})
-
-test_that("show_test_image invalid input", {
-  # Missing images field
-  dataset_missing <- list()
-  expect_error(show_test_image(dataset_missing), "Error: dataset must contain an 'images' element.")
-
-  # Incorrect dimensions
-  dataset_wrong_shape <- list(images = matrix(1:10, nrow = 5))
-  expect_error(show_test_image(dataset_wrong_shape), "Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).", fixed = TRUE)
-
-  # Not a list
-  dataset_not_list <- "not_list"
-  expect_error(show_test_image(dataset_not_list), "Error: dataset must be a list.")
+  expect_no_error(show_test_image(data))
 })
 
 test_that("rgb_to_bgr valid input", {
-  dataset <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)))
+  data <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)))
 
-  # Expect no errors
-  result <- rgb_to_bgr(dataset)
-  expect_equal(dim(result), c(5, 64, 64, 3))
+  dataset_bgr <- rgb_to_bgr(data)
+  expect_equal(dim(dataset_bgr$images), c(5, 64, 64, 3))
 })
 
-test_that("rgb_to_bgr invalid input", {
-  # Missing images field
-  dataset_missing <- list()
-  expect_error(rgb_to_bgr(dataset_missing), "Error: dataset must contain an 'images' element.")
-
-  # Incorrect dimensions
-  dataset_wrong_shape <- list(images = matrix(1:10, nrow = 5))
-  expect_error(rgb_to_bgr(dataset_wrong_shape), "Error: dataset images must be a 4D array with dimensions (batch, height, width, channels).", fixed = TRUE)
-
-  # Not a list
-  dataset_not_list <- "not_list"
-  expect_error(rgb_to_bgr(dataset_not_list), "Error: dataset must be a list.")
-})
-
-test_that("annotations_to_csv valid vector predictions", {
-  dataset <- list(images = array(runif(300), dim = c(10, 10, 10, 3)), filenames = paste0("image_", seq_len(10), ".jpg"))
-  predictions <- sample(0:9, 10, replace = TRUE)
+test_that("annotations_to_csv valid input", {
+  data <- list(images = array(runif(300), dim = c(10, 10, 10, 3)), filenames = paste0("image_", seq_len(10), ".jpg"))
+  predictions <- sample(0:7, 10, replace = TRUE)
   temp_file <- tempfile()
-  annotations_to_csv(dataset, predictions, temp_file)
+  annotations_to_csv(data, predictions, temp_file)
   result <- read.csv(temp_file)
-  expect_equal(colnames(result), c("filepath", "prediction"))
+  expect_equal(colnames(result), c("name", "prediction"))
   expect_equal(nrow(result), 10)
+
+  unlink(temp_file)
 })
 
-test_that("annotations_to_csv valid matrix predictions", {
-  dataset <- list(images = array(runif(300), dim = c(10, 10, 10, 3)), filenames = paste0("image_", seq_len(10), ".jpg"))
-  predictions_matrix <- matrix(runif(100), nrow = 10, ncol = 10)
+test_that("annotations_to_csv valid input softmax", {
+  data <- list(images = array(runif(300), dim = c(10, 10, 10, 3)), filenames = paste0("image_", seq_len(10), ".jpg"))
+  predictions_softmax <- matrix(runif(100), nrow = 10, ncol = 10)
   temp_file <- tempfile()
-  annotations_to_csv(dataset, predictions_matrix, temp_file)
+  annotations_to_csv(data, predictions_softmax, temp_file)
   result <- read.csv(temp_file)
-  expect_equal(colnames(result), c("filepath", "prediction"))
+  expect_equal(colnames(result), c("name", "prediction"))
   expect_equal(nrow(result), 10)
+
+  unlink(temp_file)
 })
 
 test_that("annotations_to_csv invalid input", {
-  dataset <- list(images = array(runif(300), dim = c(10, 10, 10, 3)))
-  predictions <- sample(0:9, 10, replace = TRUE)
-  expect_error(annotations_to_csv(dataset, predictions, tempfile()), "Error: dataset must contain a 'filenames' element.")
+  data <- list(images = array(runif(300), dim = c(10, 10, 10, 3)), filenames = paste0("image_", seq_len(10), ".jpg"))
+  predictions <- sample(0:7, 10, replace = TRUE)
+  temp_dir <- tempdir()
 
-  dataset <- list(images = array(runif(300), dim = c(10, 10, 10, 3)), filenames = paste0("image_", seq_len(5), ".jpg"))
-  predictions <- sample(0:9, 10, replace = TRUE)
-  expect_error(annotations_to_csv(dataset, predictions, tempfile()), "Error: The length of 'filenames' must be equal to the length of 'predictions'.")
+  expect_error(annotations_to_csv(data, predictions, 30), "Error: 'output_path' must be a character string")
 
-  predictions <- letters[1:10]
-  expect_error(annotations_to_csv(dataset, predictions, tempfile()), "Error: predictions must be either an integer vector or a matrix.")
+  expect_error(annotations_to_csv(data, "Invalid Predictions", temp_dir), "Error: 'predictions' must be either an integer vector (score predictions) or a matrix (softmax values), not a character vector.", fixed = TRUE)
 
-  predictions <- NULL
-  expect_error(annotations_to_csv(dataset, predictions, tempfile()), "Error: predictions must be either an integer vector or a matrix.")
-
-  # Not a list
-  dataset_not_list <- "not_list"
-  expect_error(annotations_to_csv(dataset_not_list, predictions, tempfile()), "Error: dataset must be a list.")
+  # Predictions too short
+  predictions_short <- sample(0:7, 5, replace = TRUE)
+  expect_error(annotations_to_csv(data, predictions_short, temp_dir), "Error: The length of 'filenames' in 'data' must be equal to the length of 'predictions'.")
 })

@@ -4,15 +4,14 @@
 \alias{load_result_pca}
 \title{Load a Saved PCA Result Object}
 \usage{
-load_result_pca(model = "base_cnn")
+load_result_pca(data)
 }
 \arguments{
-\item{model}{A character string specifying the object to load. Defaults to \code{"base_cnn_pca"}.}
+\item{data}{A character string specifying the object to load. Defaults to \code{"base_cnn_pca"}.}
 }
 \value{
 The loaded R object.
 }
 \description{
-This function loads a saved RDS object based on a predefined lookup table.
-It is designed for loading the \code{result_pca} object but can be extended to load other objects in the future.
+This function loads a saved RDS object.
 }

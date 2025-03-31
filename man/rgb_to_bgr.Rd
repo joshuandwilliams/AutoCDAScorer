@@ -4,10 +4,10 @@
 \alias{rgb_to_bgr}
 \title{Convert RGB to BGR}
 \usage{
-rgb_to_bgr(dataset)
+rgb_to_bgr(data)
 }
 \arguments{
-\item{dataset}{A dataset containing images, where images are stored in a 4D array, where the 4th dimension is RGB colour}
+\item{data}{A dataset containing images, where images are stored in a 4D array, where the 4th dimension is RGB colour}
 }
 \value{
 A dataset whose images have the same structure, but the color channels reordered to BGR.

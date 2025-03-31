@@ -4,10 +4,10 @@
 \alias{load_cdascorer_dataframe}
 \title{Load CSV file in CDAScorer format}
 \usage{
-load_cdascorer_dataframe(filepath)
+load_cdascorer_dataframe(path)
 }
 \arguments{
-\item{filepath}{A string representing the path to the CSV file.}
+\item{path}{A string representing the path to the CSV file.}
 }
 \value{
 A dataframe containing the data from the CSV file.

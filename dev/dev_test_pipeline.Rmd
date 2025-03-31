@@ -17,18 +17,16 @@ use_condaenv("/Users/jowillia/opt/anaconda3/envs/r-tensorflow")
 # Load model and images. View example image
 ```{r}
 # Load original images
-original_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/cropped_images", image_size=64, labels=TRUE)
+original_dataset <- load_images("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/cropped_images", image_size=64)
 show_test_image(original_dataset)
 
 # Load new images
-new_dataset <- load_images_and_labels("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/bio_test", image_size=64, labels=TRUE)
+new_dataset <- load_images("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/bio_test", image_size=64)
 show_test_image(new_dataset)
 ```
 
 # Build PCA from original images and transform new images using generated PCs
 ```{r}
-# Generate PCA data object and save to package data
-
 run_pca_python <- function(data, n_components = 10) {
   # Check Python installation and environment
   if (!reticulate::py_available(initialize = TRUE)) {
@@ -45,23 +43,10 @@ run_pca_python <- function(data, n_components = 10) {
   np <- reticulate::import("numpy")
   sklearn_decomposition <- reticulate::import("sklearn.decomposition")
 
-  # Handle data format
-  if (is.list(data)) {
-    if (!"images" %in% names(data)) {
-      stop("Error: You provided 'data' as a list. It must contain an 'images' element.")
-    }
-    images <- data$images
-    if (length(dim(images)) != 4) {
-      stop("Error: data$images must be a 4D array (batch, height, width, channels).")
-    }
-    images_array <- np$array(images)
-    images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1)))
-  } else if (is.numeric(data)) {
-    images_array <- np$array(as.matrix(data))
-  } else {
-    stop("Error: 'data' must either be numeric (a matrix/array) or a list containing an 'images' element.")
-  }
-
+  images <- data$images
+  images_array <- np$array(images)
+  images_array <- np$reshape(images_array, c(dim(images_array)[1], as.integer(-1)))
+  
   # Validate n_components
   if (n_components > dim(images_array)[2]) {
     stop("Error: 'n_components' cannot be greater than the number of features in the input data.")
@@ -87,7 +72,7 @@ run_pca_python <- function(data, n_components = 10) {
 }
 
 result_pca <- run_pca_python(original_dataset, n_components=5)
-saveRDS(result_pca, "~/Packages/AutoCDAScorer/inst/extdata/base_cnn_pca.rds")
+#saveRDS(result_pca, "~/Packages/AutoCDAScorer/inst/extdata/base_cnn_pca.rds")
 ```
 
 # Diagnostic plots
@@ -126,12 +111,12 @@ convexhull_plot
 
 # Make score predictions
 ```{r}
-new_images_bgr <- rgb_to_bgr(new_dataset)
-new_predictions <- predict_score("base_cnn", new_images_bgr, softmax = FALSE)
-table(new_predictions)
+new_dataset_bgr <- rgb_to_bgr(new_dataset)
+predictions <- predict_score("base_cnn", new_dataset_bgr, softmax = FALSE)
+table(predictions)
 ```
 
 # Save predictions
 ```{r}
-annotations_to_csv(new_dataset, new_predictions, "~/Packages/AutoCDAScorer/dev/annotations.csv")
+annotations_to_csv(new_dataset_bgr, predictions, "~/Packages/AutoCDAScorer/dev/annotations.csv")
 ```

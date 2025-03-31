@@ -4,18 +4,18 @@
 \alias{predict_score}
 \title{Predict the score for a batch of images using a CDAScorer Keras model}
 \usage{
-predict_score(model = "base_cnn", data, softmax = FALSE)
+predict_score(model, data, softmax = FALSE)
 }
 \arguments{
-\item{model}{A Keras model used for making predictions.}
+\item{model}{A string corresponding to a specific Keras model.}
 
 \item{data}{A data list containing a 4D array of images (height, width, channels, num_images).}
 
-\item{softmax}{A boolean to return raw softmax values (TRUE) or the predicted class index (FALSE). Default is FALSE.}
+\item{softmax}{A boolean to return raw softmax values (TRUE) or the predicted score (FALSE). Default is FALSE.}
 }
 \value{
-A vector or matrix containing either the raw softmax values or the predicted class indices.
+An object containing either the raw softmax values (matrix) or the predicted scores (vector).
 }
 \description{
-This function returns either the raw softmax probabilities or the predicted class for a set of images.
+This function returns either the raw softmax probabilities or the predicted score for a set of images.
 }
