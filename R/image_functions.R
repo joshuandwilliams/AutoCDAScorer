@@ -99,18 +99,19 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
 
     cropped_image <- magick::image_crop(image, geometry = paste0(x2 - x1, "x", y2 - y1, "+", x1, "+", y1))
     resized_image <- magick::image_resize(cropped_image, paste0(image_size, "x", image_size))
+    final_image <- magick::image_flatten(resized_image)
 
     cropped_filename <- paste0(fs::path_file(img_path), "_", row, "_", col, "_", pos, ".tif")
 
     if (!is.null(output_path)) {
-      magick::image_write(resized_image, file.path(output_path, cropped_filename))
+      magick::image_write(final_image, file.path(output_path, cropped_filename))
     }
-
-    images[[i]] <- as.numeric(magick::image_data(resized_image))
+    images[[i]] <- as.numeric(magick::image_data(final_image, channels = 'rgb'))
     filenames[i] <- cropped_filename
   }
 
   images_array <- array(0, dim = c(length(images), image_size, image_size, 3)) # Of shape (batch, height, width, channels)
+
   for (i in seq_along(images)) {
     images_array[i,,,] <- images[[i]]
   }
@@ -198,7 +199,8 @@ load_images <- function(input_path, image_size = 64) {
         sprintf("Note: Input image %s is not square (Width: %d, Height: %d)", image_paths[i], img_info$width, img_info$height)
       }
       resized_image <- magick::image_resize(image, paste0(image_size, "x", image_size))
-      images[[i]] <- as.numeric(magick::image_data(resized_image))
+      final_image <- magick::image_flatten(resized_image)
+      images[[i]] <- as.numeric(magick::image_data(final_image, channels = 'rgb'))
     }
   }
 

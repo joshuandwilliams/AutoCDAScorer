@@ -1,0 +1,115 @@
+---
+title: "predict_score"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{predict_score}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(AutoCDAScorer)
+
+# Set up mock CDAScorer file (ignore - only needed for the purposes of this vignette)
+tmp_cdascorer_csv <- tempfile(fileext = ".csv")
+cdascorer_input_path <- system.file("extdata", "example_dataset/cdascorer_example.csv", package = "AutoCDAScorer", mustWork = TRUE)
+raw_img_path <- system.file("extdata", "example_dataset/raw_images/image1.tif", package = "AutoCDAScorer")
+cdascorer_df <- read.csv(cdascorer_input_path)
+cdascorer_df$img <- rep(raw_img_path, nrow(cdascorer_df))
+write.csv(cdascorer_df, tmp_cdascorer_csv, row.names = FALSE)
+```
+
+# Load CDA image dataset
+
+You have two options here.
+1) You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
+2) You can load already-cropped CDA TIFF images from a directory
+
+Option 1:
+```{r}
+cdascorer_output_path <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE)
+
+your_dataset <- crop_and_load_images(input_path = tmp_cdascorer_csv, output_path = cdascorer_output_path)
+
+show_test_image(your_dataset)
+```
+
+Option 2:
+```{r load images}
+image_directory <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE)
+your_dataset <- load_images(input_path = image_directory)
+
+show_test_image(your_dataset)
+```
+
+# Diagnostic plots
+
+These diagnostic plots can help you gauge whether your images fall within the variation of those seen by the model training.
+
+This is important, since models only perform well on images similar to those they have been trained on.
+
+Try different models to find one whose training images better match your images.
+
+Your images are suitable if they fall within the cloud of grey datapoints (the images used for model training).
+
+Some subplots on the grid are more important for assessing suitablility than others. Each scatter plot in the top left (coordinates A, B) is paired with an importance plot in the bottom right (coordinates B, A). The importance is the summed explained variance of the two PCs A, B. 
+
+You should pay more attention to plots with higher weightings, since points on these plots are more reflective of the true similarity between your images and the training images.
+
+```{r}
+target_plot <- diagnostic_pca(
+  model = "base_cnn",
+  your_data = your_dataset,
+  num_pcs = 5,
+  plot_type = "target",
+  num_ellipses = 3
+)
+target_plot
+
+contour_plot <- diagnostic_pca(
+  model = "base_cnn",
+  your_data = your_dataset,
+  num_pcs = 5,
+  plot_type = "density",
+  num_bins = 5
+)
+contour_plot
+
+convexhull_plot <- diagnostic_pca(
+  model = "base_cnn",
+  your_data = your_dataset,
+  num_pcs = 5,
+  plot_type = "convexhull"
+)
+convexhull_plot
+```
+
+# Make score predictions
+
+Once you've identified a model whose training images are similar to your own images, you can have that model make predictions on your images.
+
+You can choose the results to be returned as scores between 0-6 (0 = no cell death, 6 = strong cell death) or softmax probabilities (with one column for each score 0-6).
+
+```{r}
+your_dataset_bgr <- rgb_to_bgr(data = your_dataset)
+your_predictions <- predict_score(model = "base_cnn", data = your_dataset_bgr, softmax = FALSE)
+
+table(your_predictions)
+```
+
+# Save scores
+
+Optionally you can save these scores for downstream applications.
+
+```{r}
+predictions_output <- file.path(tempdir(), "cdascorer_predictions.csv") # Replace with your output path. Ignore tempdir(), which is only here for the purposes of the vignette.
+
+annotations_to_csv(data = your_dataset_bgr, predictions = your_predictions, output_path = predictions_output)
+```
