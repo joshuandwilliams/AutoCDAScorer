@@ -29,7 +29,7 @@ The goal of AutoCDAScorer is to make scoring cell death areas on UV spectra agro
 
 You can install the development version of AutoCDAScorer from [GitHub](https://github.com/) with:
       
-``` r
+```{r}
 # install.packages("devtools")
 devtools::install_github("joshuandwilliams/AutoCDAScorer")
 ```
