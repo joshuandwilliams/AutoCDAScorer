@@ -23,17 +23,20 @@ load_cda_model <- function(model) {
 #' Predict the score for a batch of images using a CDAScorer Keras model
 #'
 #' This function returns either the raw softmax probabilities or the predicted score for a set of images.
+#' Optionally this function can save the predicted annotations to a csv file.
 #'
 #' @param model A string corresponding to a specific Keras model.
 #' @param data A data list containing a 4D array of images (height, width, channels, num_images).
+#' @param output_path The file path where the CSV file should be saved.
 #' @param softmax A boolean to return raw softmax values (TRUE) or the predicted score (FALSE). Default is FALSE.
 #'
 #' @return An object containing either the raw softmax values (matrix) or the predicted scores (vector).
 #'
 #' @import keras3
+#' @importFrom utils write.csv
 #'
 #' @export
-predict_score <- function(model, data, softmax = FALSE) {
+predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
 
   # No need to check model, load_cda_model() has those checks built in.
   model <- load_cda_model(model)
@@ -45,12 +48,27 @@ predict_score <- function(model, data, softmax = FALSE) {
     stop("Error: 'softmax' must be a logical (TRUE/FALSE)")
   }
 
-  raw_scores <- model$predict(images)
+  if (!is.character(output_path)) {
+    stop("Error: 'output_path' must be a character string")
+  }
+
+  softmax_predictions <- model$predict(images)
+  predicted_classes <- as.integer(apply(softmax_predictions, 1, which.max) - 1)
+
+  if (!is.null(output_path)){
+    if (softmax == FALSE){
+      df <- data.frame(name = data$filenames, prediction = predicted_classes)
+      df <- df[order(df$name), ]
+    } else {
+      df <- data.frame(name = data$filenames, softmax_predictions)
+      colnames(df) <- c("name", 0:6)
+    }
+    write.csv(df, output_path, row.names = FALSE)
+  }
 
   if (softmax) {
-    return(raw_scores)
+    return(softmax_predictions)
   } else {
-    predicted_classes <- as.integer(apply(raw_scores, 1, which.max) - 1)
     return(predicted_classes)
   }
 }

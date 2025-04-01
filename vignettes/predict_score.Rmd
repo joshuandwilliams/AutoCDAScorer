@@ -97,19 +97,13 @@ Once you've identified a model whose training images are similar to your own ima
 
 You can choose the results to be returned as scores between 0-6 (0 = no cell death, 6 = strong cell death) or softmax probabilities (with one column for each score 0-6).
 
+
 ```{r}
 your_dataset_bgr <- rgb_to_bgr(data = your_dataset)
-your_predictions <- predict_score(model = "base_cnn", data = your_dataset_bgr, softmax = FALSE)
 
-table(your_predictions)
-```
-
-# Save scores
-
-Optionally you can save these scores for downstream applications.
-
-```{r}
 predictions_output <- file.path(tempdir(), "cdascorer_predictions.csv") # Replace with your output path. Ignore tempdir(), which is only here for the purposes of the vignette.
 
-annotations_to_csv(data = your_dataset_bgr, predictions = your_predictions, output_path = predictions_output)
+your_predictions <- predict_score(model = "base_cnn", data = your_dataset_bgr, output_path = predictions_output, softmax = FALSE)
+
+table(your_predictions)
 ```
