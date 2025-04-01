@@ -4,12 +4,14 @@
 \alias{predict_score}
 \title{Predict the score for a batch of images using a CDAScorer Keras model}
 \usage{
-predict_score(model, data, softmax = FALSE)
+predict_score(model, data, output_path = NULL, softmax = FALSE)
 }
 \arguments{
 \item{model}{A string corresponding to a specific Keras model.}
 
 \item{data}{A data list containing a 4D array of images (height, width, channels, num_images).}
+
+\item{output_path}{The file path where the CSV file should be saved.}
 
 \item{softmax}{A boolean to return raw softmax values (TRUE) or the predicted score (FALSE). Default is FALSE.}
 }
@@ -18,4 +20,5 @@ An object containing either the raw softmax values (matrix) or the predicted sco
 }
 \description{
 This function returns either the raw softmax probabilities or the predicted score for a set of images.
+Optionally this function can save the predicted annotations to a csv file.
 }
