@@ -56,4 +56,4 @@ jobs:
         with:
           args: "--no-manual --as-cran"
           upload-snapshots: true
-          error-on: "never"
+          error-on: warning
