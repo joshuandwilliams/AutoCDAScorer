@@ -19,8 +19,9 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 [![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer)
 [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml)
+[![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+![R](https://img.shields.io/badge/R-%3E=4.4.2-1e90ff?logo=r)
 [![tensorflow version](https://img.shields.io/badge/tensorflow-v2.16.2-orange)](https://www.tensorflow.org/)
-[![python version](https://img.shields.io/badge/python-v3.11.11-blue)](https://www.python.org/)
 <!-- badges: end -->
 
 The goal of AutoCDAScorer is to make scoring cell death areas on UV spectra agroinfiltration images faster, more consistent, and less subjective.
@@ -31,7 +32,7 @@ You can install the development version of AutoCDAScorer from [GitHub](https://g
       
 ```{r}
 # install.packages("devtools")
-devtools::install_github("joshuandwilliams/AutoCDAScorer")
+# devtools::install_github("joshuandwilliams/AutoCDAScorer")
 ```
 
 ## Usage
