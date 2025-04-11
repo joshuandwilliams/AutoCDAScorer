@@ -7,7 +7,7 @@
 
 [![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer)
 [![R CMD
-check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yml)
+check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml)
 [![tensorflow
 version](https://img.shields.io/badge/tensorflow-v2.16.2-orange)](https://www.tensorflow.org/)
 [![python
@@ -28,17 +28,15 @@ You can install the development version of AutoCDAScorer from
 devtools::install_github("joshuandwilliams/AutoCDAScorer")
 #> Using GitHub PAT from the git credential store.
 #> Downloading GitHub repo joshuandwilliams/AutoCDAScorer@HEAD
-#> tzdb       (0.4.0    -> 0.5.0 ) [CRAN]
-#> reticulate (1.41.0.1 -> 1.42.0) [CRAN]
-#> jsonlite   (1.9.1    -> 2.0.0 ) [CRAN]
-#> curl       (6.2.1    -> 6.2.2 ) [CRAN]
-#> magick     (2.8.5    -> 2.8.6 ) [CRAN]
-#> Installing 5 packages: tzdb, reticulate, jsonlite, curl, magick
+#> pillar  (1.10.1 -> 1.10.2) [CRAN]
+#> rlang   (1.1.5  -> 1.1.6 ) [CRAN]
+#> ggplot2 (3.5.1  -> 3.5.2 ) [CRAN]
+#> Installing 3 packages: pillar, rlang, ggplot2
 #> 
 #> The downloaded binary packages are in
-#>  /var/folders/t2/x6n0myz97530m_6h9clj5ds4000fpx/T//RtmpvAIlUh/downloaded_packages
+#>  /var/folders/t2/x6n0myz97530m_6h9clj5ds4000fpx/T//RtmpYuSrzU/downloaded_packages
 #> ── R CMD build ─────────────────────────────────────────────────────────────────
-#>      checking for file ‘/private/var/folders/t2/x6n0myz97530m_6h9clj5ds4000fpx/T/RtmpvAIlUh/remotes5f375377827d/joshuandwilliams-AutoCDAScorer-a94b653/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/t2/x6n0myz97530m_6h9clj5ds4000fpx/T/RtmpvAIlUh/remotes5f375377827d/joshuandwilliams-AutoCDAScorer-a94b653/DESCRIPTION’ (368ms)
+#>      checking for file ‘/private/var/folders/t2/x6n0myz97530m_6h9clj5ds4000fpx/T/RtmpYuSrzU/remotes11eee7506010e/joshuandwilliams-AutoCDAScorer-256d853/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/t2/x6n0myz97530m_6h9clj5ds4000fpx/T/RtmpYuSrzU/remotes11eee7506010e/joshuandwilliams-AutoCDAScorer-256d853/DESCRIPTION’
 #>   ─  preparing ‘AutoCDAScorer’:
 #>      checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
 #>   ─  checking for LF line-endings in source and make files and shell scripts
