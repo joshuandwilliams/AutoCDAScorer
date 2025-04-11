@@ -54,6 +54,6 @@ jobs:
         uses: r-lib/actions/check-r-package@v2
         id: rcmdcheck
         with:
-          args: "--no-manual --as-cran"
+          args: "--as-cran"
           upload-snapshots: true
           error-on: '"warning"'
