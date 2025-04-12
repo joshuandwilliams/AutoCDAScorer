@@ -57,3 +57,15 @@ test_that("predict_score invalid inputs", {
 
   expect_error(predict_score("base_cnn", data, output_path = 3, softmax = FALSE), "Error: 'output_path' must be a character string")
 })
+
+test_that("predict_score rgb to bgr", {
+  data <- list(
+    images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)),
+    filenames = paste0("image_", seq_len(5), ".jpg") # Ensure filenames are included for CSV output
+  )
+  data$images[,,,3] <- data$images[,,,3] / 2 # To trigger rgb to bgr
+
+  temp_file <- tempfile()
+
+  expect_no_error(predict_score("base_cnn", data, output_path = temp_file, softmax = FALSE))
+})
