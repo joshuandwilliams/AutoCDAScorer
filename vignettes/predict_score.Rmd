@@ -99,11 +99,9 @@ You can choose the results to be returned as scores between 0-6 (0 = no cell dea
 
 
 ```{r}
-your_dataset_bgr <- rgb_to_bgr(data = your_dataset)
-
 predictions_output <- file.path(tempdir(), "cdascorer_predictions.csv") # Replace with your output path. Ignore tempdir(), which is only here for the purposes of the vignette.
 
-your_predictions <- predict_score(model = "base_cnn", data = your_dataset_bgr, output_path = predictions_output, softmax = FALSE)
+your_predictions <- predict_score(model = "base_cnn", data = your_dataset, output_path = predictions_output, softmax = FALSE)
 
 table(your_predictions)
 ```

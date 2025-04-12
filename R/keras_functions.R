@@ -52,6 +52,13 @@ predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
     stop("Error: 'output_path' must be a character string")
   }
 
+  mean_ch1 <- mean(images[,,,1])
+  mean_ch3 <- mean(images[,,,3])
+  if (mean_ch1 > mean_ch3) { # Images in RGB (BGR needed for model)
+    bgr_data <- rgb_to_bgr(data)
+    images <- bgr_data$images
+  }
+
   softmax_predictions <- model$predict(images)
   predicted_classes <- as.integer(apply(softmax_predictions, 1, which.max) - 1)
 
