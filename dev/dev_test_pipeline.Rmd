@@ -17,11 +17,11 @@ use_condaenv("/Users/jowillia/opt/anaconda3/envs/r-tensorflow")
 # Load model and images. View example image
 ```{r}
 # Load original images
-original_dataset <- load_images("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/cropped_images", image_size=64)
+original_dataset <- load_images("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/cropped_images")
 show_test_image(original_dataset)
 
 # Load new images
-new_dataset <- load_images("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/bio_test", image_size=64)
+new_dataset <- load_images("/Users/jowillia/Documents/GitHub/Bulletproof_Models/data/bio_test")
 show_test_image(new_dataset)
 ```
 
@@ -99,6 +99,37 @@ contour_plot
 convexhull_plot <- diagnostic_pca(
   "base_cnn",
   new_dataset,
+  num_pcs = 5,
+  plot_type = "convexhull"
+)
+convexhull_plot
+```
+
+Good and bad examples
+```{r}
+indices <- grep("^DSC_0105", original_dataset$filenames)
+good_dataset <- list(images = original_dataset$images[indices, , ,]) # Subset of training data
+
+convexhull_plot <- diagnostic_pca(
+  "base_cnn",
+  good_dataset,
+  num_pcs = 5,
+  plot_type = "convexhull"
+)
+convexhull_plot
+```
+
+```{r}
+saveRDS(good_dataset, file = "~/Packages/AutoCDAScorer/inst/extdata/example_dataset/training_subset/good_dataset.rds")
+```
+
+```{r}
+bad_dataset <- good_dataset
+bad_dataset$images <- bad_dataset$images[,,,c(3,1,2)] # Mix up the colour channels
+
+convexhull_plot <- diagnostic_pca(
+  "base_cnn",
+  bad_dataset,
   num_pcs = 5,
   plot_type = "convexhull"
 )

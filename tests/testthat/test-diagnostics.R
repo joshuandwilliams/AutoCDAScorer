@@ -107,14 +107,15 @@ generate_diagnostic_test_data <- function() {
 
 test_that("diagnostic_pca valid input", {
   data <- generate_diagnostic_test_data()
+  temp_file <- tempfile(fileext = ".jpg")
 
-  p <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins)
+  p <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
   expect_type(p, "list")
 
-  q <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "density", num_ellipses = data$num_ellipses, num_bins = data$num_bins)
+  q <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "density", num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
   expect_type(q, "list")
 
-  r <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "convexhull", num_ellipses = data$num_ellipses, num_bins = data$num_bins)
+  r <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "convexhull", num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
   expect_type(r, "list")
 })
 
@@ -124,6 +125,8 @@ test_that("diagnostic_pca invalid input types", {
   expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "wrong_input", num_ellipses = data$num_ellipses, num_bins = data$num_bins))
   expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = "wrong_input", num_bins = data$num_bins))
   expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "density", num_ellipses = data$num_ellipses, num_bins = "wrong_input"))
+  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = 5))
+
 })
 
 test_that("diagnostic_pca invalid num_pcs values", {

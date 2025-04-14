@@ -307,6 +307,7 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
 #' @param plot_type A string specifying the type of plot: `"target"`, `"density"`, or `"convexhull"`.
 #' @param num_ellipses An integer specifying the number of ellipses for the `"target"` plot type (default: 3).
 #' @param num_bins An integer specifying the number of bins for the `"density"` plot type (default: 3).
+#' @param output_path A filepath to save the plot to.
 #'
 #' @return A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
 #'
@@ -314,9 +315,15 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
 #' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
 #'
 #' @export
-diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_ellipses=3, num_bins= 3) {
+diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_ellipses=3, num_bins= 3, output_path = NULL) {
   check_valid_package_data(model, pca = TRUE)
   check_valid_data(your_data, images = TRUE, filenames = FALSE)
+
+  if (!is.null(output_path) ) {
+    if (!is.character(output_path)) {
+      stop("Error: 'output_path' must be a character string")
+    }
+  }
 
   # Load and check pca object
   pca <- load_result_pca(model)
@@ -523,6 +530,10 @@ diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_
       width = 0.35, # Adjusted width to accommodate the extra item
       height = 0.05
     )
+
+  if (!is.null(output_path) ) {
+    ggsave(output_path, combined_plot, width = 6, height = 5, dpi = 300)
+  }
 
   return(combined_plot)
 }

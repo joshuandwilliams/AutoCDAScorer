@@ -26,14 +26,30 @@ knitr::opts_chunk$set(
 
 The goal of AutoCDAScorer is to make scoring cell death areas on UV spectra agroinfiltration images faster, more consistent, and less subjective.
 
+AutoCDAScorer uses deep learning models trained on UV spectra agroinfiltration images to automatically predict cell death severity between 0 (no cell death) and 6 (strong cell death).
+
 ## Installation
 
 You can install the development version of AutoCDAScorer from [GitHub](https://github.com/) with:
       
-```{r}
-# install.packages("devtools")
-# devtools::install_github("joshuandwilliams/AutoCDAScorer")
+```{r, eval = FALSE}
+install.packages("devtools")
+devtools::install_github("joshuandwilliams/AutoCDAScorer")
 ```
+
+The `AutoCDAScorer` package uses TensorFlow. If you already have TensorFlow installed you can use `reticulate::use_condaenv()` to specify the correct environment for R to use. Otherwise you will need to install TensorFlow. You can do this from within R:
+
+```r
+library(AutoCDAScorer)
+install_tensorflow()
+```
+
+This installation only needs to be done once. After that, TensorFlow will remain installed unless you actively remove it.
 
 ## Usage
 
+The package vignette provides a workflow for loading images, assessing their suitability, and predicting their score.
+
+```{r, eval = FALSE}
+browseVignettes("AutoCDAScorer")
+```

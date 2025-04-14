@@ -10,7 +10,8 @@ diagnostic_pca(
   num_pcs,
   plot_type,
   num_ellipses = 3,
-  num_bins = 3
+  num_bins = 3,
+  output_path = NULL
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ diagnostic_pca(
 \item{num_ellipses}{An integer specifying the number of ellipses for the \code{"target"} plot type (default: 3).}
 
 \item{num_bins}{An integer specifying the number of bins for the \code{"density"} plot type (default: 3).}
+
+\item{output_path}{A filepath to save the plot to.}
 }
 \value{
 A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
