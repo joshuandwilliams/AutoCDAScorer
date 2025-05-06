@@ -14,10 +14,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+This is an example workflow to show loading image datasets, checking whether they are appropriate for AutoCDAScorer's models using diagnostic plots, and finally making score predictions.
+
 ```{r setup}
 library(AutoCDAScorer)
+```
 
-# Set up mock CDAScorer file (only needed for the purposes of this vignette)
+```{r mock_cdascorer_csv, include=FALSE}
 tmp_cdascorer_csv <- tempfile(fileext = ".csv")
 cdascorer_input_path <- system.file("extdata", "example_dataset/cdascorer_example.csv", package = "AutoCDAScorer", mustWork = TRUE)
 raw_img_path <- system.file("extdata", "example_dataset/raw_images/image1.tif", package = "AutoCDAScorer")
@@ -28,25 +31,21 @@ write.csv(cdascorer_df, tmp_cdascorer_csv, row.names = FALSE)
 
 ## Load CDA image dataset
 
-You have two options here.
+AutoCDAScorer provides two ways of loading image datasets
 
-1) You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
+Option 1: You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
 
-2) You can load already-cropped CDA TIFF images from a directory
-
-Option 1:
-
-```{r}
-cdascorer_output_path <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE)
+```{r load_cdascorer}
+cdascorer_output_path <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE) # Example dataset
 
 your_dataset <- crop_and_load_images(input_path = tmp_cdascorer_csv, output_path = cdascorer_output_path)
 
 show_test_image(your_dataset)
 ```
 
-Option 2:
+Option 2: You can load already-cropped CDA TIFF images from a directory.
 
-```{r load images}
+```{r load_images}
 image_directory <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE)
 your_dataset <- load_images(input_path = image_directory)
 
@@ -55,23 +54,13 @@ show_test_image(your_dataset)
 
 ## Diagnostic plots
 
-These diagnostic plots can help you gauge whether your images fall within the variation of those seen by the model training.
+AutoCDAScorer provides three types of diagnostic plot to help you gauge whether your images fall within the variation of those seen by the model training. This is important, since models only make accurate predictions on images similar to those they have been trained on.
 
-This is important, since models only perform well on images similar to those they have been trained on.
+#### How to interpret these plots?
 
-Try different models to find one whose training images better match your images.
+These diagnostic plots are based on principal components analysis (PCA). The grey cloud represents the image dataset the models were trained on. Your images are more likely to receive accurate score predictions if they fall within this region across all subplots.
 
-Your images are more likely to receive accurate score predictions if they fall within the cloud of grey datapoints (the images used for model training).
-
-Some subplots on the grid are more important for assessing suitablility than others. Each scatter plot in the top left (coordinates A, B) is paired with an importance plot in the bottom right (coordinates B, A). The importance is the summed explained variance of the two PCs A, B. 
-
-You should pay more attention to plots with higher weightings, since points on these plots are more reflective of the true similarity between your images and the training images.
-
-You can also use the "output_path" parameter to save your plot locally.
-
-Positive control example: using a subset of the training data.
-
-```{r fig.height=5, fig.width=6}
+```{r positive_diagnostic, fig.height=5, fig.width=6}
 rds_path <- system.file("extdata/example_dataset/training_subset/good_dataset.rds", package = "AutoCDAScorer", mustWork = TRUE)
 good_dataset <- readRDS(rds_path)
 
@@ -79,29 +68,33 @@ convexhull_plot <- diagnostic_pca(
   "base_cnn",
   good_dataset,
   num_pcs = 5,
-  plot_type = "convexhull"
+  plot_type = "convexhull",
+  output_path = NULL
 )
 convexhull_plot
 ```
 
-Negative control example: rearranging the colour channels of the good subset.
+If your images appear outside of the grey cloud (i.e. are different to those used in training), we do not recommend using AutoCDAScorer.
 
-```{r fig.height=5, fig.width=6}
+```{r negative_diagnostic, fig.height=5, fig.width=6}
 bad_dataset <- good_dataset
-bad_dataset$images <- bad_dataset$images[,,,c(3,1,2)] # Mix up the colour channels
+bad_dataset$images <- bad_dataset$images[,,,c(3,1,2)] # Mix up the colour channels to make a "bad" set of images
 
 convexhull_plot <- diagnostic_pca(
   "base_cnn",
   bad_dataset,
   num_pcs = 5,
-  plot_type = "convexhull"
+  plot_type = "convexhull",
+  output_path = NULL
 )
 convexhull_plot
 ```
 
-Mixed example: an unseen new set of images that are somewhat similar to the training data.
+Sometimes it will be unclear if your images are appropriate for use with AutoCDAScorer. Perhaps some of your images are consistently within the grey cloud whilst others aren't. You should try diagnostic plots using different models to find one whose training images best match your images.
 
-```{r fig.height=5, fig.width=6}
+To help you decide, each scatter plot in the top left (coordinates A, B) is paired with an importance plot in the bottom right (coordinates B, A). You should pay more attention to plots with higher importance percentages, since the points on these plots are more reflective of the true similarity between your images and the training images.
+
+```{r real_diagnostic, fig.height=5, fig.width=6}
 target_plot <- diagnostic_pca(
   model = "base_cnn",
   your_data = your_dataset,
@@ -135,11 +128,8 @@ Once you've identified a model whose training images are similar to your own ima
 
 You can choose the results to be returned as scores between 0-6 (0 = no cell death, 6 = strong cell death) or softmax probabilities (with one column for each score 0-6).
 
-
-```{r}
-predictions_output <- file.path(tempdir(), "cdascorer_predictions.csv") # Replace with your output path. Ignore tempdir(), which is only here for the purposes of the vignette.
-
-your_predictions <- predict_score(model = "base_cnn", data = your_dataset, output_path = predictions_output, softmax = FALSE)
+```{r predict}
+your_predictions <- predict_score(model = "base_cnn", data = your_dataset, softmax = FALSE)
 
 table(your_predictions)
 ```

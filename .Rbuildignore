@@ -6,3 +6,5 @@
 ^\.git$
 ^\.github$
 ^\.Rhistory$
+^doc$
+^Meta$
