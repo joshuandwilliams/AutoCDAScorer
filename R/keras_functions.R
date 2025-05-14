@@ -1,7 +1,8 @@
 #' Check and Install TensorFlow/Keras Backend
 #'
-#' This function checks if the TensorFlow backend required for Keras models is installed and available.
-#' If not, it prompts the user to install TensorFlow and required dependencies using keras3::install_keras().
+#' This function checks if the TensorFlow backend required for Keras models is
+#' installed and available. If not, it prompts the user to install TensorFlow
+#' and required dependencies using keras3::install_keras().
 #'
 #' @return Invisibly returns TRUE if TensorFlow is available, FALSE otherwise.
 #'
@@ -15,45 +16,52 @@ check_and_install_tensorflow <- function() {
   }
 
   # Check if TensorFlow/Keras is available
-  # Try to load keras and see if tensorflow can be initialized
-  tryCatch({
-    # Try to initialize keras3
+  success <- tryCatch({
     keras3::keras$utils$get_file
-    message("✅ TensorFlow and Keras backend are already available.")
-    return(invisible(TRUE))
+    TRUE
   }, error = function(e) {
-    # If there's an error, TensorFlow/Keras is not properly configured
-    return(FALSE)
+    FALSE
   })
 
-  message("⚠️ TensorFlow backend is not installed. It is required to run model functions in AutoCDAScorer.")
+  if (success) {
+    print("TensorFlow and Keras backend are already available.")
+    return(invisible(TRUE))
+  }
+
+  print("TensorFlow backend is not installed. It is required to run model functions in AutoCDAScorer.")
   user_input <- readline(prompt = "Would you like to install TensorFlow now? [Yes/No]: ")
 
   if (tolower(user_input) %in% c("yes", "y")) {
-    message("🔧 Installing TensorFlow and dependencies using keras3::install_keras()...")
+    print("Installing TensorFlow and dependencies using keras3::install_keras()...")
     tryCatch({
       keras3::install_keras(tensorflow = "2.16.2")
       keras3::use_backend("tensorflow")
 
       # Check again if keras can be initialized
-      tryCatch({
-        # Try to access keras3
+      success2 <- tryCatch({
         keras3::keras$utils$get_file
-        message("✅ TensorFlow installation successful.")
-        return(invisible(TRUE))
+        TRUE
       }, error = function(e) {
-        warning("TensorFlow installation completed, but backend is still not available. Please check your Python environment.")
-        return(invisible(FALSE))
+        FALSE
       })
+
+      if (success2) {
+        print("TensorFlow installation successful.")
+        return(invisible(TRUE))
+      } else {
+        print("TensorFlow installation completed, but backend is still not available. Please check your Python environment.")
+        return(invisible(FALSE))
+      }
     }, error = function(e) {
-      warning("❌ TensorFlow installation failed: ", conditionMessage(e))
+      print(paste("TensorFlow installation failed:", conditionMessage(e)))
       return(invisible(FALSE))
     })
   } else {
-    message("❌ TensorFlow installation skipped. Model functions will not work until TensorFlow is installed.")
+    print("TensorFlow installation skipped. Model functions will not work until TensorFlow is installed.")
     return(invisible(FALSE))
   }
 }
+
 #' Load CDAScorer Keras Model
 #'
 #' This function loads a pre-trained Keras model from the `extdata` directory of the `AutoCDAScorer` package.
@@ -115,6 +123,7 @@ predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
   mean_ch1 <- mean(images[,,,1])
   mean_ch3 <- mean(images[,,,3])
   if (mean_ch1 > mean_ch3) { # Images in RGB (BGR needed for model)
+    print("Your images are more blue than red, which shouldn't be true of CDA images. Converting from RGB to BGR.")
     bgr_data <- rgb_to_bgr(data)
     images <- bgr_data$images
   }

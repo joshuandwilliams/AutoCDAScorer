@@ -10,6 +10,7 @@ check_and_install_tensorflow()
 Invisibly returns TRUE if TensorFlow is available, FALSE otherwise.
 }
 \description{
-This function checks if the TensorFlow backend required for Keras models is installed and available.
-If not, it prompts the user to install TensorFlow and required dependencies using keras3::install_keras().
+This function checks if the TensorFlow backend required for Keras models is
+installed and available. If not, it prompts the user to install TensorFlow
+and required dependencies using keras3::install_keras().
 }
