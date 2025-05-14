@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
-[![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer) [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) ![R](https://img.shields.io/badge/R-%3E=4.4.2-1e90ff?logo=r) [![tensorflow version](https://img.shields.io/badge/tensorflow-v2.16.2-orange)](https://www.tensorflow.org/)
+[![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer) [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r) [![tensorflow version](https://img.shields.io/badge/tensorflow-v2.16.2-orange)](https://www.tensorflow.org/)
 
 <!-- badges: end -->
 
@@ -82,7 +82,7 @@ AutoCDAScorer provides two ways of loading image datasets
 
 Option 1: You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
 
-```{r load_cdascorer}
+```{r load_cdascorer, fig.width=2, fig.height=2}
 cdascorer_output_path <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE) # Example dataset
 
 your_dataset <- crop_and_load_images(input_path = tmp_cdascorer_csv, output_path = cdascorer_output_path)
@@ -92,7 +92,7 @@ show_test_image(your_dataset)
 
 Option 2: You can load already-cropped CDA TIFF images from a directory.
 
-```{r load_images}
+```{r load_images, fig.width=2, fig.height=2}
 image_directory <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE)
 your_dataset <- load_images(input_path = image_directory)
 
