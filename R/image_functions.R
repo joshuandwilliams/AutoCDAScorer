@@ -97,7 +97,7 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
     resized_image <- magick::image_resize(cropped_image, paste0(image_size, "x", image_size))
     final_image <- magick::image_flatten(resized_image)
 
-    cropped_filename <- paste0(fs::path_file(img_path), "_", i, ".tif")
+    cropped_filename <- paste0(fs::path_ext_remove(fs::path_file(img_path)), "_", i, ".tif")
 
     if (!is.null(output_path)) {
       magick::image_write(final_image, file.path(output_path, cropped_filename))
