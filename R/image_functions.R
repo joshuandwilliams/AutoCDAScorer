@@ -1,6 +1,6 @@
 #' Load CSV file in CDAScorer format
 #'
-#' This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", and "y2".
+#' This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", "y2".
 #'
 #' @param path A string representing the path to the CSV file.
 #'
@@ -18,7 +18,7 @@ load_cdascorer_dataframe <- function(path) {
 
   df <- readr::read_csv(path, show_col_types = FALSE)
 
-  required_cols <- c("img", "x1", "x2", "y1", "y2", "row", "col", "pos")
+  required_cols <- c("img", "x1", "x2", "y1", "y2")
   if (!all(required_cols %in% colnames(df))){
     stop(paste0("Error: cdascorer input CSV must contain the following columns: ", paste(required_cols, collapse = ", ")))
   }
@@ -74,10 +74,6 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
     x2 <- cdascorer$x2[i]
     y1 <- cdascorer$y1[i]
     y2 <- cdascorer$y2[i]
-    row <- cdascorer$row[i]
-    col <- cdascorer$col[i]
-    pos <- cdascorer$pos[i]
-
     if (img_path != prev_img_path) { # Check if current image path same as previous (prevents re-loading same images over and over)
       image <- magick::image_read(img_path)
       prev_img_path <- img_path
@@ -101,7 +97,7 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
     resized_image <- magick::image_resize(cropped_image, paste0(image_size, "x", image_size))
     final_image <- magick::image_flatten(resized_image)
 
-    cropped_filename <- paste0(fs::path_file(img_path), "_", row, "_", col, "_", pos, ".tif")
+    cropped_filename <- paste0(fs::path_file(img_path), "_", i, ".tif")
 
     if (!is.null(output_path)) {
       magick::image_write(final_image, file.path(output_path, cropped_filename))

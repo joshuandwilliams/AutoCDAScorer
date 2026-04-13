@@ -13,5 +13,5 @@ load_cdascorer_dataframe(path)
 A dataframe containing the data from the CSV file.
 }
 \description{
-This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", and "y2".
+This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", "y2".
 }

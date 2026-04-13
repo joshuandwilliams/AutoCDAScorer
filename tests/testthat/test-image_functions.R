@@ -4,10 +4,7 @@ valid_cdascorer_df <- function() {
     x1 = c(1, 2),
     x2 = c(3, 4),
     y1 = c(5, 6),
-    y2 = c(7, 8),
-    row = c(1, 2),
-    col = c(3, 4),
-    pos = c(5, 6)
+    y2 = c(7, 8)
   )
 }
 
@@ -30,9 +27,9 @@ test_that("load_cdascorer_dataframe invalid path", {
 test_that("load_cdascorer_dataframe incorrect columns", {
   temp_file <- tempfile(fileext = ".csv")
   df <- valid_cdascorer_df()
-  df <- valid_cdascorer_df() %>% dplyr::select(-pos)
+  df <- valid_cdascorer_df() %>% dplyr::select(-x1)
   write.csv(df, temp_file, row.names = FALSE)
-  expect_error(load_cdascorer_dataframe(temp_file), "Error: cdascorer input CSV must contain the following columns: img, x1, x2, y1, y2, row, col, pos")
+  expect_error(load_cdascorer_dataframe(temp_file), "Error: cdascorer input CSV must contain the following columns: img, x1, x2, y1, y2")
 
   unlink(temp_file)
 })
@@ -73,8 +70,8 @@ test_that("crop_and_load_images valid inputs", {
 
   # Check saved images exist
   expect_true(dir_exists(output_path))
-  expect_true(file_exists(file.path(output_path, "image1.png_1_3_5.tif")))
-  expect_true(file_exists(file.path(output_path, "image2.png_2_4_6.tif")))
+  expect_true(file_exists(file.path(output_path, "image1.png_1.tif")))
+  expect_true(file_exists(file.path(output_path, "image2.png_2.tif")))
 
   unlink(temp_file)
   unlink(image_paths)
@@ -98,8 +95,7 @@ test_that("crop_and_load_images invalid coordinates", {
   cdascorer <- data.frame(
     img = c(temp_path_img),
     x1 = c(10), x2 = c(50),
-    y1 = c(5), y2 = c(40),
-    row = c(1), col = c(1), pos = c(1)
+    y1 = c(5), y2 = c(40)
   ) # x2 and y2 are out of bounds
   write.csv(cdascorer, temp_path_csv, row.names = FALSE)
   expect_error(crop_and_load_images(temp_path_csv, image_size = 64))
