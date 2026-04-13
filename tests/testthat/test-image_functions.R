@@ -70,8 +70,8 @@ test_that("crop_and_load_images valid inputs", {
 
   # Check saved images exist
   expect_true(dir_exists(output_path))
-  expect_true(file_exists(file.path(output_path, "image1.png_1.tif")))
-  expect_true(file_exists(file.path(output_path, "image2.png_2.tif")))
+  expect_true(file_exists(file.path(output_path, "image1_1.tif")))
+  expect_true(file_exists(file.path(output_path, "image2_2.tif")))
 
   unlink(temp_file)
   unlink(image_paths)
