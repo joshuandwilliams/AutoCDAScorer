@@ -16,7 +16,8 @@ crop_and_load_images(input_path, image_size = 64, output_path = NULL)
 \value{
 A list containing:
 \itemize{
-\item \code{images}: a 4D array of cropped images.
+\item \code{images}: a 4D array of cropped images, resized to \code{image_size}.
+\item \code{crops}: a list of the same crops at their own resolution, for the feature models.
 \item \code{filenames}: a character vector of filenames for the cropped images.
 }
 }

@@ -7,10 +7,14 @@
 check_and_install_tensorflow()
 }
 \value{
-Invisibly returns TRUE if TensorFlow is available, FALSE otherwise.
+Invisibly returns TRUE if a new enough backend is available, FALSE otherwise.
 }
 \description{
 This function checks if the TensorFlow backend required for Keras models is
 installed and available. If not, it prompts the user to install TensorFlow
 and required dependencies using keras3::install_keras().
+}
+\details{
+The packaged models were saved by Keras 3.15.0, so the version is checked as
+well as the presence: an older backend cannot deserialise them.
 }

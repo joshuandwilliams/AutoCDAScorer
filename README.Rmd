@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
-[![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer) [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r) [![tensorflow version](https://img.shields.io/badge/tensorflow-v2.16.2-orange)](https://www.tensorflow.org/)
+[![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer) [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r) [![keras version](https://img.shields.io/badge/keras-%3E=3.15.0-orange)](https://keras.io/)
 
 <!-- badges: end -->
 
@@ -34,23 +34,31 @@ install.packages("devtools")
 devtools::install_github("joshuandwilliams/AutoCDAScorer")
 ```
 
-The `AutoCDAScorer` package uses TensorFlow. If you already have TensorFlow installed you can use `reticulate::use_condaenv()` to specify the correct environment for R to use. Otherwise you will need to install TensorFlow. You can do this from within R:
+AutoCDAScorer's image segmentation uses [EBImage](https://bioconductor.org/packages/EBImage/), which is a Bioconductor package rather than a CRAN one. `devtools::install_github()` handles this for you.
+
+The package also uses TensorFlow, through Keras 3.15.0 or newer. Older versions of Keras cannot read the packaged models. If you already have a suitable environment you can point R at it with `reticulate::use_condaenv()`. Otherwise install one from within R:
 
 ``` r
 library(AutoCDAScorer)
-install_tensorflow()
+check_and_install_tensorflow()
 ```
 
 This installation only needs to be done once. After that, TensorFlow will remain installed unless you actively remove it.
 
 ## Models available
 
-| Model Name | Description |
-|----|----|
-| "base_cnn" | CNN model trained on the original (base) dataset. |
-| "geom_transformer" | Vision Transformer model trained on a dataset supplemented with geometrically augmented images. |
-| "composite_cnn" | CNN model trained on a dataset supplemented with intra-class composite images. |
-| "cgan_cnn" | CNN model trained on a dataset of synthetic cGAN images. |
+Each model is scored once on the same held-out 308 CDAs, which no model saw during
+training or selection. Human raters agree with the consensus score on 68.92% of those
+CDAs, and to within one score on 92.80%.
+
+| Model Name | Description | Exact | Within 1 |
+|----|----|----|----|
+| "ensemble" | The seventeen CNNs below, averaged, then averaged with the ordinal regression. The most accurate option. | 69.16% | 98.38% |
+| "geom_cnn" | The single best CNN, trained on geometrically augmented crops. | 66.88% | 99.03% |
+| "ordinal" | Ordinal regression on twelve hand-built colour, brightness and lesion-shape features. No neural network. | 63.31% | 96.43% |
+
+`"ensemble"` and `"geom_cnn"` share a training set, so they share a diagnostic plot.
+`"ordinal"` was fitted on a smaller set of real crops only, so it has its own.
 
 ## Usage
 
@@ -83,7 +91,7 @@ AutoCDAScorer provides two ways of loading image datasets
 Option 1: You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
 
 ```{r load_cdascorer, fig.width=2, fig.height=2}
-cdascorer_output_path <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE) # Example dataset
+cdascorer_output_path <- file.path(tempdir(), "cropped_images") # Where to save the crops
 
 your_dataset <- crop_and_load_images(input_path = tmp_cdascorer_csv, output_path = cdascorer_output_path)
 
@@ -112,7 +120,7 @@ rds_path <- system.file("extdata/example_dataset/training_subset/good_dataset.rd
 good_dataset <- readRDS(rds_path)
 
 convexhull_plot <- diagnostic_pca(
-  "base_cnn",
+  "ensemble",
   good_dataset,
   num_pcs = 5,
   plot_type = "convexhull",
@@ -128,7 +136,7 @@ bad_dataset <- good_dataset
 bad_dataset$images <- bad_dataset$images[,,,c(3,1,2)] # Mix up the colour channels to make a "bad" set of images
 
 convexhull_plot <- diagnostic_pca(
-  "base_cnn",
+  "ensemble",
   bad_dataset,
   num_pcs = 5,
   plot_type = "convexhull",
@@ -143,7 +151,7 @@ To help you decide, each scatter plot in the top left (coordinates A, B) is pair
 
 ```{r real_diagnostic, fig.height=5, fig.width=6}
 target_plot <- diagnostic_pca(
-  model = "base_cnn",
+  model = "ensemble",
   your_data = your_dataset,
   num_pcs = 5,
   plot_type = "target",
@@ -152,7 +160,7 @@ target_plot <- diagnostic_pca(
 target_plot
 
 contour_plot <- diagnostic_pca(
-  model = "base_cnn",
+  model = "ensemble",
   your_data = your_dataset,
   num_pcs = 5,
   plot_type = "density",
@@ -161,7 +169,7 @@ contour_plot <- diagnostic_pca(
 contour_plot
 
 convexhull_plot <- diagnostic_pca(
-  model = "base_cnn",
+  model = "ensemble",
   your_data = your_dataset,
   num_pcs = 5,
   plot_type = "convexhull"
@@ -176,7 +184,7 @@ Once you've identified a model whose training images are similar to your own ima
 You can choose the results to be returned as scores between 0-6 (0 = no cell death, 6 = strong cell death) or softmax probabilities (with one column for each score 0-6).
 
 ```{r predict}
-your_predictions <- predict_score(model = "base_cnn", data = your_dataset, softmax = FALSE)
+your_predictions <- predict_score(model = "ensemble", data = your_dataset, softmax = FALSE)
 
 table(your_predictions)
 ```

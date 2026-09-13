@@ -1,5 +1,5 @@
 test_that("load_result_pca valid name", {
-  pca_result <- load_result_pca("base_cnn")
+  pca_result <- load_result_pca("ensemble")
   expect_true(is.list(pca_result))
   expect_true(all(c("principal_components", "center", "explained_variance") %in% names(pca_result)))
 })
@@ -96,7 +96,7 @@ generate_diagnostic_test_data <- function() {
                       dim = c(num_samples, img_height, img_width, num_channels)))
 
   return(list(
-    model = "base_cnn",
+    model = "ensemble",
     your_data = your_data,
     num_pcs = 3,
     plot_type = "target",
@@ -109,29 +109,29 @@ test_that("diagnostic_pca valid input", {
   data <- generate_diagnostic_test_data()
   temp_file <- tempfile(fileext = ".jpg")
 
-  p <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
-  expect_type(p, "list")
+  p <- diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
+  expect_s3_class(p, "ggplot")
 
-  q <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "density", num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
-  expect_type(q, "list")
+  q <- diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "density", num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
+  expect_s3_class(q, "ggplot")
 
-  r <- diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "convexhull", num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
-  expect_type(r, "list")
+  r <- diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "convexhull", num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = temp_file)
+  expect_s3_class(r, "ggplot")
 })
 
 test_that("diagnostic_pca invalid input types", {
   data <- generate_diagnostic_test_data()
-  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = "wrong_input", plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins))
-  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "wrong_input", num_ellipses = data$num_ellipses, num_bins = data$num_bins))
-  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = "wrong_input", num_bins = data$num_bins))
-  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "density", num_ellipses = data$num_ellipses, num_bins = "wrong_input"))
-  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = 5))
+  expect_error(diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = "wrong_input", plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins))
+  expect_error(diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "wrong_input", num_ellipses = data$num_ellipses, num_bins = data$num_bins))
+  expect_error(diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = "wrong_input", num_bins = data$num_bins))
+  expect_error(diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = "density", num_ellipses = data$num_ellipses, num_bins = "wrong_input"))
+  expect_error(diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = data$num_pcs, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins, output_path = 5))
 
 })
 
 test_that("diagnostic_pca invalid num_pcs values", {
   data <- generate_diagnostic_test_data()
   mockery::stub(diagnostic_pca, 'load_result_pca', data$pca_result)
-  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = -1, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins))
-  expect_error(diagnostic_pca(model = "base_cnn", your_data = data$your_data, num_pcs = 10, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins))
+  expect_error(diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = -1, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins))
+  expect_error(diagnostic_pca(model = "ensemble", your_data = data$your_data, num_pcs = 10, plot_type = data$plot_type, num_ellipses = data$num_ellipses, num_bins = data$num_bins))
 })

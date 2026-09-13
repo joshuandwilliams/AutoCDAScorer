@@ -5,7 +5,8 @@
 #' @param name A character string specifying the name of the data object.
 #' @param pca A logical indicating whether to check for a PCA object (TRUE) or a model (FALSE). Defaults to FALSE.
 #'
-#' @return The filename associated with the valid data object name.
+#' @return The filenames associated with the valid data object name. One for everything
+#'   except the ensemble, which is its 17 networks plus the ordinal regression.
 #'
 #' @keywords internal
 #' @noRd
@@ -18,16 +19,29 @@ check_valid_package_data <- function(name, pca = FALSE) {
     stop("Error: 'pca' must be a logical (TRUE/FALSE)")
   }
 
+  # The 17 geometric-augmentation CNNs whose cross-validation accuracy on original crops
+  # ties within one standard error of the best. 6848 tops that ranking and the held-out
+  # ensemble split, so it is also the single-model option.
+  geom_cnn <- paste0("geom_cnn_", c(1389, 3554, 3607, 5712, 5763, 5764, 5766, 6722, 6776,
+                                    6792, 6846, 6848, 7855, 7856, 7872, 7905, 7927), ".keras")
+
   if (pca == FALSE) {
     type = "model"
     lookup <- list(
-      base_cnn = "model_39_0.keras"
+      ordinal = "ordinal_regression.rds",
+      geom_cnn = "geom_cnn_6848.keras",
+      ensemble = c(geom_cnn, "ordinal_regression.rds")
       # Add more models here
     )
   } else {
     type = "pca"
+    # Each model is paired with the crops it was trained on: medoid_64 train+val for the
+    # ordinal regression, the augmented pool for the CNNs. The ensemble takes the CNNs'
+    # pool, which is the wider of the two.
     lookup <- list(
-      base_cnn = "base_cnn_pca.rds"
+      ordinal = "medoid_pca.rds",
+      geom_cnn = "geom_pca.rds",
+      ensemble = "geom_pca.rds"
       # Add more pca objects here
     )
   }
@@ -41,15 +55,16 @@ check_valid_package_data <- function(name, pca = FALSE) {
 
 #' Check for Valid Data List
 #'
-#' This function validates the structure of a data list, checking for the presence and correct format of 'images' and/or 'filenames' elements.
+#' This function validates the structure of a data list, checking for the presence and correct format of 'images', 'filenames' and/or 'crops' elements.
 #'
 #' @param data A list containing the data to be validated.
 #' @param images A logical indicating whether to check for an 'images' element (TRUE) or not (FALSE). Defaults to TRUE.
 #' @param filenames A logical indicating whether to check for a 'filenames' element (TRUE) or not (FALSE). Defaults to FALSE.
+#' @param crops A logical indicating whether to check for a 'crops' element (TRUE) or not (FALSE). Defaults to FALSE.
 #'
 #' @keywords internal
 #' @noRd
-check_valid_data <- function(data, images = TRUE, filenames = FALSE) {
+check_valid_data <- function(data, images = TRUE, filenames = FALSE, crops = FALSE) {
   if (!is.list(data)) {
     stop("Error: 'data' must be a list")
   }
@@ -73,6 +88,17 @@ check_valid_data <- function(data, images = TRUE, filenames = FALSE) {
 
     if (!is.character(data$filenames)) {
       stop("Error: 'filenames' must be of type character")
+    }
+  }
+
+  # Check crops if needed
+  if (crops == TRUE) {
+    if (!"crops" %in% names(data)) {
+      stop("Error: 'data' must contain a 'crops' element")
+    }
+
+    if (!is.list(data$crops) || !all(vapply(data$crops, function(x) length(dim(x)) == 3, logical(1)))) {
+      stop("Error: 'crops' must be a list of 3D arrays with dimensions (height, width, channels)")
     }
   }
 }

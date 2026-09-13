@@ -2,7 +2,7 @@
 #'
 #' This function loads a saved RDS object.
 #'
-#' @param data A character string specifying the object to load. Defaults to `"base_cnn_pca"`.
+#' @param data A character string naming the model whose PCA object to load.
 #'
 #' @return The loaded R object.
 load_result_pca <- function(data) {
@@ -315,7 +315,7 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
 #' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
 #'
 #' @export
-diagnostic_pca <- function(model="base_cnn", your_data, num_pcs, plot_type, num_ellipses=3, num_bins= 3, output_path = NULL) {
+diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_ellipses=3, num_bins= 3, output_path = NULL) {
   check_valid_package_data(model, pca = TRUE)
   check_valid_data(your_data, images = TRUE, filenames = FALSE)
 
