@@ -10,7 +10,7 @@ output: github_document
 
 <!-- badges: start -->
 
-[![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer) [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r) [![keras version](https://img.shields.io/badge/keras-%3E=3.15.0-orange)](https://keras.io/)
+[![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://app.codecov.io/gh/joshuandwilliams/AutoCDAScorer) [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r) [![keras version](https://img.shields.io/badge/keras-%3E=3.15.0-orange)](https://keras.io/)
 
 <!-- badges: end -->
 
