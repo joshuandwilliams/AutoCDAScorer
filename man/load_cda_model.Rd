@@ -4,10 +4,11 @@
 \alias{load_cda_model}
 \title{Load CDAScorer Keras Model}
 \usage{
-load_cda_model(model)
+load_cda_model(model_file)
 }
 \arguments{
-\item{model}{A string specifying which model to load.}
+\item{model_file}{A string naming the file to load. The backend is checked by the
+caller, once, rather than here, since the ensemble loads seventeen of these.}
 }
 \value{
 A Keras model object

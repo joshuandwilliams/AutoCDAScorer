@@ -1,17 +1,21 @@
 test_that("check_valid_package_data valid inputs", {
-  expect_no_error(check_valid_package_data("base_cnn", pca = FALSE))
-  expect_no_error(check_valid_package_data("base_cnn", pca = TRUE))
+  for (name in c("ordinal", "geom_cnn", "ensemble")) {
+    expect_no_error(check_valid_package_data(name, pca = FALSE))
+    expect_no_error(check_valid_package_data(name, pca = TRUE))
+  }
+  expect_length(check_valid_package_data("ensemble", pca = FALSE), 18) # 17 networks + ordinal
 })
 
 test_that("check_valid_package_data invalid inputs", {
   expect_error(check_valid_package_data(10, pca=FALSE), "Error: 'name' must be a character string")
-  expect_error(check_valid_package_data("base_cnn", pca="Invalid pca"), "Error: 'pca' must be a logical (TRUE/FALSE)", fixed = TRUE)
+  expect_error(check_valid_package_data("ordinal", pca="Invalid pca"), "Error: 'pca' must be a logical (TRUE/FALSE)", fixed = TRUE)
   expect_error(check_valid_package_data("Invalid name", pca=FALSE))
 })
 
 test_that("check_valid_data valid inputs", {
-  data <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)), filenames = paste0("image_", seq_len(10), ".jpg"))
-  expect_no_error(check_valid_data(data, images=TRUE, filenames=TRUE))
+  data <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)), filenames = paste0("image_", seq_len(10), ".jpg"),
+               crops = replicate(5, array(stats::runif(70 * 80 * 3), dim = c(70, 80, 3)), simplify = FALSE))
+  expect_no_error(check_valid_data(data, images=TRUE, filenames=TRUE, crops=TRUE))
 })
 
 test_that("check_valid_data invalid inputs", {
@@ -29,6 +33,12 @@ test_that("check_valid_data invalid inputs", {
 
   filenames_wrong_type <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)), filenames = seq_len(10))
   expect_error(check_valid_data(filenames_wrong_type, images=TRUE, filenames=TRUE), "Error: 'filenames' must be of type character")
+
+  no_crops <- list(images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)))
+  expect_error(check_valid_data(no_crops, images=TRUE, crops=TRUE), "Error: 'data' must contain a 'crops' element")
+
+  crops_wrong_dims <- c(no_crops, list(crops = list(array(stats::runif(70 * 80), dim = c(70, 80)))))
+  expect_error(check_valid_data(crops_wrong_dims, images=TRUE, crops=TRUE), "Error: 'crops' must be a list of 3D arrays with dimensions (height, width, channels)", fixed = TRUE)
 })
 
 test_that("check_valid_pca valid input", {

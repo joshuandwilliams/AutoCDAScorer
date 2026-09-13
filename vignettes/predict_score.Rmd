@@ -36,7 +36,7 @@ AutoCDAScorer provides two ways of loading image datasets
 Option 1: You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
 
 ```{r load_cdascorer}
-cdascorer_output_path <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE) # Example dataset
+cdascorer_output_path <- file.path(tempdir(), "cropped_images") # Where to save the crops
 
 your_dataset <- crop_and_load_images(input_path = tmp_cdascorer_csv, output_path = cdascorer_output_path)
 
@@ -65,7 +65,7 @@ rds_path <- system.file("extdata/example_dataset/training_subset/good_dataset.rd
 good_dataset <- readRDS(rds_path)
 
 convexhull_plot <- diagnostic_pca(
-  "base_cnn",
+  "ensemble",
   good_dataset,
   num_pcs = 5,
   plot_type = "convexhull",
@@ -81,7 +81,7 @@ bad_dataset <- good_dataset
 bad_dataset$images <- bad_dataset$images[,,,c(3,1,2)] # Mix up the colour channels to make a "bad" set of images
 
 convexhull_plot <- diagnostic_pca(
-  "base_cnn",
+  "ensemble",
   bad_dataset,
   num_pcs = 5,
   plot_type = "convexhull",
@@ -96,7 +96,7 @@ To help you decide, each scatter plot in the top left (coordinates A, B) is pair
 
 ```{r real_diagnostic, fig.height=5, fig.width=6}
 target_plot <- diagnostic_pca(
-  model = "base_cnn",
+  model = "ensemble",
   your_data = your_dataset,
   num_pcs = 5,
   plot_type = "target",
@@ -105,7 +105,7 @@ target_plot <- diagnostic_pca(
 target_plot
 
 contour_plot <- diagnostic_pca(
-  model = "base_cnn",
+  model = "ensemble",
   your_data = your_dataset,
   num_pcs = 5,
   plot_type = "density",
@@ -114,7 +114,7 @@ contour_plot <- diagnostic_pca(
 contour_plot
 
 convexhull_plot <- diagnostic_pca(
-  model = "base_cnn",
+  model = "ensemble",
   your_data = your_dataset,
   num_pcs = 5,
   plot_type = "convexhull"
@@ -129,7 +129,7 @@ Once you've identified a model whose training images are similar to your own ima
 You can choose the results to be returned as scores between 0-6 (0 = no cell death, 6 = strong cell death) or softmax probabilities (with one column for each score 0-6).
 
 ```{r predict}
-your_predictions <- predict_score(model = "base_cnn", data = your_dataset, softmax = FALSE)
+your_predictions <- predict_score(model = "ensemble", data = your_dataset, softmax = FALSE)
 
 table(your_predictions)
 ```

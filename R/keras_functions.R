@@ -1,10 +1,16 @@
+# Keras version that saved the packaged models, recorded in their metadata.json.
+KERAS_MINIMUM <- numeric_version("3.15.0")
+
 #' Check and Install TensorFlow/Keras Backend
 #'
 #' This function checks if the TensorFlow backend required for Keras models is
 #' installed and available. If not, it prompts the user to install TensorFlow
 #' and required dependencies using keras3::install_keras().
 #'
-#' @return Invisibly returns TRUE if TensorFlow is available, FALSE otherwise.
+#' The packaged models were saved by Keras 3.15.0, so the version is checked as
+#' well as the presence: an older backend cannot deserialise them.
+#'
+#' @return Invisibly returns TRUE if a new enough backend is available, FALSE otherwise.
 #'
 #' @import keras3
 #' @export
@@ -15,17 +21,19 @@ check_and_install_tensorflow <- function() {
     return(invisible(FALSE))
   }
 
-  # Check if TensorFlow/Keras is available
-  success <- tryCatch({
-    keras3::keras$utils$get_file
-    TRUE
-  }, error = function(e) {
-    FALSE
-  })
+  # Reading the version both reaches the backend and reports what it is
+  version <- tryCatch(numeric_version(keras3::keras$`__version__`),
+                      error = function(e) NULL)
 
-  if (success) {
-    print("TensorFlow and Keras backend are already available.")
-    return(invisible(TRUE))
+  if (!is.null(version)) {
+    if (version >= KERAS_MINIMUM) {
+      print(paste0("TensorFlow and Keras ", version, " backend are already available."))
+      return(invisible(TRUE))
+    }
+    print(paste0("Keras ", version, " is too old to load AutoCDAScorer's models, which need ",
+                 KERAS_MINIMUM, " or newer. Upgrade with keras3::install_keras(), or point ",
+                 "reticulate at an environment that has it."))
+    return(invisible(FALSE))
   }
 
   print("TensorFlow backend is not installed. It is required to run model functions in AutoCDAScorer.")
@@ -34,22 +42,20 @@ check_and_install_tensorflow <- function() {
   if (tolower(user_input) %in% c("yes", "y")) {
     print("Installing TensorFlow and dependencies using keras3::install_keras()...")
     tryCatch({
-      keras3::install_keras(tensorflow = "2.16.2")
+      # install_keras() takes no version arguments; it installs the newest Keras 3.x.
+      keras3::install_keras()
       keras3::use_backend("tensorflow")
 
       # Check again if keras can be initialized
-      success2 <- tryCatch({
-        keras3::keras$utils$get_file
-        TRUE
-      }, error = function(e) {
-        FALSE
-      })
+      success2 <- tryCatch(numeric_version(keras3::keras$`__version__`) >= KERAS_MINIMUM,
+                           error = function(e) FALSE)
 
       if (success2) {
         print("TensorFlow installation successful.")
         return(invisible(TRUE))
       } else {
-        print("TensorFlow installation completed, but backend is still not available. Please check your Python environment.")
+        print(paste0("TensorFlow installation completed, but a Keras ", KERAS_MINIMUM,
+                     " or newer backend is still not available. Please check your Python environment."))
         return(invisible(FALSE))
       }
     }, error = function(e) {
@@ -66,16 +72,13 @@ check_and_install_tensorflow <- function() {
 #'
 #' This function loads a pre-trained Keras model from the `extdata` directory of the `AutoCDAScorer` package.
 #'
-#' @param model A string specifying which model to load.
+#' @param model_file A string naming the file to load. The backend is checked by the
+#'   caller, once, rather than here, since the ensemble loads seventeen of these.
 #'
 #' @return A Keras model object
 #'
 #' @import keras3
-load_cda_model <- function(model) {
-  model_file <- check_valid_package_data(name = model, pca = FALSE)
-
-  check_and_install_tensorflow()
-
+load_cda_model <- function(model_file) {
   path <- system.file("extdata", model_file, package = "AutoCDAScorer")
   model <- keras3::load_model(path)
 
@@ -104,10 +107,11 @@ load_cda_model <- function(model) {
 #' @export
 predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
 
-  # No need to check model, load_cda_model() has those checks built in.
-  model <- load_cda_model(model)
+  model_files <- check_valid_package_data(name = model, pca = FALSE)
+  keras_files <- grep("\\.keras$", model_files, value = TRUE)
+  ordinal_file <- grep("\\.rds$", model_files, value = TRUE)
 
-  check_valid_data(data, images = TRUE, filenames = FALSE)
+  check_valid_data(data, images = TRUE, filenames = FALSE, crops = length(ordinal_file) > 0)
   images <- data$images
 
   if (!is.logical(softmax)) {
@@ -123,12 +127,30 @@ predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
   mean_ch1 <- mean(images[,,,1])
   mean_ch3 <- mean(images[,,,3])
   if (mean_ch1 > mean_ch3) { # Images in RGB (BGR needed for model)
-    print("Your images are more blue than red, which shouldn't be true of CDA images. Converting from RGB to BGR.")
+    message("Your images are more red than blue, so they are in RGB. Converting to BGR for the model.")
     bgr_data <- rgb_to_bgr(data)
     images <- bgr_data$images
   }
 
-  softmax_predictions <- model$predict(images)
+  # Each family is averaged internally before the families are averaged together, so the
+  # seventeen networks of the ensemble do not outvote its one ordinal regression.
+  parts <- list()
+
+  if (length(keras_files) > 0) {
+    if (!check_and_install_tensorflow()) {
+      stop("Error: No usable Keras backend, so the model cannot be loaded")
+    }
+    p <- lapply(keras_files, function(f) load_cda_model(f)$predict(images, verbose = 0L))
+    parts$networks <- Reduce(`+`, p) / length(p)
+  }
+
+  if (length(ordinal_file) > 0) {
+    features <- t(vapply(data$crops, cda_features, numeric(length(FEATURE_NAMES))))
+    parts$ordinal <- ordinal_probs(
+      readRDS(system.file("extdata", ordinal_file, package = "AutoCDAScorer")), features)
+  }
+
+  softmax_predictions <- unname(Reduce(`+`, parts) / length(parts))
   predicted_classes <- as.integer(apply(softmax_predictions, 1, which.max) - 1)
 
   if (!is.null(output_path)){

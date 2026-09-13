@@ -37,7 +37,8 @@ jobs:
             liblapack-dev \
             libopenblas-dev \
             libfribidi-dev \
-            libmagick++-dev
+            libmagick++-dev \
+            libfftw3-dev # EBImage -> fftwtools
       - name: Install dependencies
         run: |
           install.packages(c("covr", "devtools", "mockery"))

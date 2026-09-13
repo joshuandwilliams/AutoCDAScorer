@@ -7,7 +7,7 @@
 load_result_pca(data)
 }
 \arguments{
-\item{data}{A character string specifying the object to load. Defaults to \code{"base_cnn_pca"}.}
+\item{data}{A character string naming the model whose PCA object to load.}
 }
 \value{
 The loaded R object.

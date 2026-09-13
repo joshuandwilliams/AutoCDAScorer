@@ -14,6 +14,7 @@ load_images(input_path, image_size = 64)
 \value{
 A list containing:
 \item{images}{A 4D array of images: n_images, height, width, channels}
+\item{crops}{A list of the same images at their own resolution, for the feature models}
 \item{filenames}{A vector of image file names}
 }
 \description{

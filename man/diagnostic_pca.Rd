@@ -5,7 +5,7 @@
 \title{Diagnostic PCA Scatter Plots for All Principal Component Pairs}
 \usage{
 diagnostic_pca(
-  model = "base_cnn",
+  model = "ensemble",
   your_data,
   num_pcs,
   plot_type,

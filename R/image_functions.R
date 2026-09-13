@@ -1,3 +1,54 @@
+#' Resize an image array the way the models were trained
+#'
+#' Reproduces OpenCV's `INTER_LINEAR`, which samples at `(j + 0.5) * scale - 0.5` and
+#' interpolates the four neighbours. The models were trained on crops resized this way, and
+#' `magick::image_resize` uses a different filter that shifts 14 of the 308 test predictions.
+#'
+#' @param img A 3D numeric array (height, width, channels).
+#' @param n An integer side length for the output.
+#'
+#' @return A 3D numeric array (n, n, channels).
+#'
+#' @keywords internal
+#' @noRd
+resize_bilinear <- function(img, n) {
+  ax <- function(s) {
+    x <- (seq_len(n) - 0.5) * s / n - 0.5
+    i0 <- floor(x)
+    a <- x - i0
+    a[i0 < 0 | i0 + 1 > s - 1] <- 0
+    list(i0 = pmin(pmax(i0, 0), s - 1) + 1L, i1 = pmin(pmax(i0 + 1, 0), s - 1) + 1L, a = a)
+  }
+  h <- ax(dim(img)[1])
+  w <- ax(dim(img)[2])
+  lerp <- function(A, B, a, m) sweep(A, m, 1 - a, "*") + sweep(B, m, a, "*")
+  lerp(lerp(img[h$i0, w$i0, , drop = FALSE], img[h$i0, w$i1, , drop = FALSE], w$a, 2),
+       lerp(img[h$i1, w$i0, , drop = FALSE], img[h$i1, w$i1, , drop = FALSE], w$a, 2),
+       h$a, 1)
+}
+
+#' Turn a magick image into the two arrays the models need
+#'
+#' The networks take the crop at `n` x `n`, and the ordinal regression's features are
+#' measured on the crop at its own resolution. Both come from one read.
+#'
+#' @param im A magick image.
+#' @param n An integer side length for the resized version.
+#'
+#' @return A list of `full` (height, width, 3) and `small` (n, n, 3), both RGB. `full` is
+#'   on a 0-1 scale and `small` on the 0-255/256 scale the models were trained on.
+#'
+#' @import magick
+#'
+#' @keywords internal
+#' @noRd
+image_arrays <- function(im, n) {
+  info <- magick::image_info(im)
+  full <- array(as.numeric(magick::image_data(im, channels = "rgb")),
+                dim = c(info$height, info$width, 3))
+  list(full = full, small = round(resize_bilinear(full * 255, n)) / 256)
+}
+
 #' Load CSV file in CDAScorer format
 #'
 #' This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", "y2".
@@ -36,7 +87,8 @@ load_cdascorer_dataframe <- function(path) {
 #' @param output_path A string representing the directory where the cropped images should be saved. If NULL, images are not saved.
 #'
 #' @return A list containing:
-#' - `images`: a 4D array of cropped images.
+#' - `images`: a 4D array of cropped images, resized to `image_size`.
+#' - `crops`: a list of the same crops at their own resolution, for the feature models.
 #' - `filenames`: a character vector of filenames for the cropped images.
 #'
 #' @import magick
@@ -93,27 +145,26 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
       ))
     }
 
-    cropped_image <- magick::image_crop(image, geometry = paste0(x2 - x1, "x", y2 - y1, "+", x1, "+", y1))
-    resized_image <- magick::image_resize(cropped_image, paste0(image_size, "x", image_size))
-    final_image <- magick::image_flatten(resized_image)
+    final_image <- magick::image_flatten(magick::image_crop(image, geometry = paste0(x2 - x1, "x", y2 - y1, "+", x1, "+", y1)))
 
     cropped_filename <- paste0(fs::path_ext_remove(fs::path_file(img_path)), "_", i, ".tif")
 
     if (!is.null(output_path)) {
       magick::image_write(final_image, file.path(output_path, cropped_filename))
     }
-    images[[i]] <- as.numeric(magick::image_data(final_image, channels = 'rgb'))
+    images[[i]] <- image_arrays(final_image, image_size)
     filenames[i] <- cropped_filename
   }
 
   images_array <- array(0, dim = c(length(images), image_size, image_size, 3)) # Of shape (batch, height, width, channels)
 
   for (i in seq_along(images)) {
-    images_array[i,,,] <- images[[i]]
+    images_array[i,,,] <- images[[i]]$small
   }
 
   return(list(
     images = images_array,
+    crops = lapply(images, `[[`, "full"),
     filenames = filenames
   ))
 }
@@ -127,6 +178,7 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
 #'
 #' @return A list containing:
 #'   \item{images}{A 4D array of images: n_images, height, width, channels}
+#'   \item{crops}{A list of the same images at their own resolution, for the feature models}
 #'   \item{filenames}{A vector of image file names}
 #'
 #' @import magick
@@ -194,9 +246,7 @@ load_images <- function(input_path, image_size = 64) {
       if (img_info$width != img_info$height) {
         sprintf("Note: Input image %s is not square (Width: %d, Height: %d)", image_paths[i], img_info$width, img_info$height)
       }
-      resized_image <- magick::image_resize(image, paste0(image_size, "x", image_size))
-      final_image <- magick::image_flatten(resized_image)
-      images[[i]] <- as.numeric(magick::image_data(final_image, channels = 'rgb'))
+      images[[i]] <- image_arrays(magick::image_flatten(image), image_size)
     }
   }
 
@@ -205,7 +255,7 @@ load_images <- function(input_path, image_size = 64) {
   if (length(images) > 0) {
     images_array <- array(0, dim = c(length(images), image_size, image_size, 3))
     for (i in seq_along(images)) {
-      images_array[i,,,] <- images[[i]]
+      images_array[i,,,] <- images[[i]]$small
     }
   } else {
     stop("Error: No images were loaded. Please check the directory or file types.")
@@ -215,6 +265,7 @@ load_images <- function(input_path, image_size = 64) {
 
   return(list(
     images = images_array,
+    crops = lapply(images, `[[`, "full"),
     filenames = filenames
   ))
 }

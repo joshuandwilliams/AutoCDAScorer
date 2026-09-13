@@ -8,3 +8,7 @@
 ^\.Rhistory$
 ^doc$
 ^Meta$
+^\.lintr$
+^\.pre-commit-config\.yaml$
+^\.pre-commit-hooks$
+^README\.html$
