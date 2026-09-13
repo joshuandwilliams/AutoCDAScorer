@@ -29,4 +29,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Only the lintr hook. pre-commit/action fails the job whenever a hook edits a
+      # file, and styler edits files by design, so running it here would demand the
+      # whole-package reformat rather than report on it. styler stays a local hook.
       - uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: lintr --all-files
