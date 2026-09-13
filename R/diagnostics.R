@@ -90,12 +90,12 @@ pca_diagnostic_target <- function(pca, new_features, PC_a, PC_b, num_ellipses = 
   original_df <- data.frame(
     PC_a = original_features[, PC_a],
     PC_b = original_features[, PC_b],
-    Type = "Original"
+    Type = "Training images"
   )
   new_df <- data.frame(
     PC_a = new_features[, PC_a],
     PC_b = new_features[, PC_b],
-    Type = "New"
+    Type = "Your images"
   )
   plot_data <- rbind(original_df, new_df)
 
@@ -122,13 +122,14 @@ pca_diagnostic_target <- function(pca, new_features, PC_a, PC_b, num_ellipses = 
   # Build the plot
   p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
     geom_point(alpha = 0.5, size = 0.5) +
-    scale_color_manual(values = c("Original" = "grey", "New" = "red")) +
+    scale_color_manual(values = c("Training images" = "grey", "Your images" = "red")) +
     theme_minimal() +
     theme(
       axis.title = element_blank(),
       axis.text = element_blank(),
       axis.ticks = element_blank(),
       legend.position = "none",
+      aspect.ratio = 1, # square panels, so a PC pair reads the same in every cell
       panel.grid = element_blank(),
       panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
       plot.margin = unit(c(0, 0, 0, 0), "cm")
@@ -169,12 +170,12 @@ pca_diagnostic_density <- function(pca, new_features, PC_a, PC_b, num_bins = 3) 
   original_df <- data.frame(
     PC_a = original_features[, PC_a],
     PC_b = original_features[, PC_b],
-    Type = "Original"
+    Type = "Training images"
   )
   new_df <- data.frame(
     PC_a = new_features[, PC_a],
     PC_b = new_features[, PC_b],
-    Type = "New"
+    Type = "Your images"
   )
   plot_data <- rbind(original_df, new_df)
 
@@ -191,13 +192,14 @@ pca_diagnostic_density <- function(pca, new_features, PC_a, PC_b, num_bins = 3) 
 
   p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
     geom_point(alpha = 0.5, size = 0.5) +
-    scale_color_manual(values = c("Original" = "grey", "New" = "red")) +
+    scale_color_manual(values = c("Training images" = "grey", "Your images" = "red")) +
     theme_minimal() +
     theme(
       axis.title = element_blank(),
       axis.text = element_blank(),
       axis.ticks = element_blank(),
       legend.position = "none",
+      aspect.ratio = 1, # square panels, so a PC pair reads the same in every cell
       panel.grid = element_blank(),
       panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
       plot.margin = unit(c(0, 0, 0, 0), "cm")
@@ -263,22 +265,22 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
   inside <- point_in_hull(new_points$x, new_points$y)
 
   # Data frame for plotting
-  original_df <- data.frame(PC_a = original_points$x, PC_b = original_points$y, Type = "Original")
+  original_df <- data.frame(PC_a = original_points$x, PC_b = original_points$y, Type = "Training images")
   new_df <- data.frame(
     PC_a = new_points$x,
     PC_b = new_points$y,
-    Type = ifelse(inside, "New (Inside)", "New (Outside)")
+    Type = ifelse(inside, "Your images, inside the hull", "Your images")
   )
   plot_data <- rbind(original_df, new_df)
 
-  original_data <- dplyr::filter(plot_data, .data$Type == "Original")
-  new_data <- dplyr::filter(plot_data, .data$Type %in% c("New (Inside)", "New (Outside)"))
+  original_data <- dplyr::filter(plot_data, .data$Type == "Training images")
+  new_data <- dplyr::filter(plot_data, .data$Type %in% c("Your images, inside the hull", "Your images"))
 
   # Plotting
   p <- ggplot() +
     geom_point(data = original_data, aes(x = PC_a, y = PC_b), color = "grey", alpha = 0.5, size = 0.5) +
     geom_point(data = new_data, aes(x = PC_a, y = PC_b, color = .data$Type), alpha = 0.5, size = 0.5) +
-    scale_color_manual(values = c("New (Inside)" = "blue", "New (Outside)" = "red")) +
+    scale_color_manual(values = c("Your images, inside the hull" = "blue", "Your images" = "red")) +
     {if(nrow(hull_points) > 0) geom_polygon(data = hull_points, aes(x = .data$x, y = .data$y), fill = NA, color = "black", alpha = 0.5, linetype = "solid")} +
     theme_minimal() +
     theme(
@@ -286,6 +288,7 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
       axis.text = element_blank(),
       axis.ticks = element_blank(),
       legend.position = "none",
+      aspect.ratio = 1, # square panels, so a PC pair reads the same in every cell
       panel.grid = element_blank(),
       panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
       plot.margin = unit(c(0, 0, 0, 0), "cm")
@@ -472,19 +475,19 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
     if (plot_type == "convexhull") {
       legend_plot <- ggplot() +
         geom_point(
-          aes(x = 1, y = 0.5, color = "Original"),
+          aes(x = 1, y = 0.5, color = "Training images"),
           size = 3, alpha = 0
         ) +
         geom_point(
-          aes(x = 2, y = 0.5, color = "New (inside)"),
+          aes(x = 2, y = 0.5, color = "Your images, inside the hull"),
           size = 3, alpha = 0
         ) +
         geom_point(
-          aes(x = 3, y = 0.5, color = "New (outside)"),
+          aes(x = 3, y = 0.5, color = "Your images"),
           size = 3, alpha = 0
         ) +
         scale_color_manual(
-          values = c("Original" = "grey", "New (inside)" = "blue", "New (outside)" = "red")
+          values = c("Training images" = "grey", "Your images, inside the hull" = "blue", "Your images" = "red")
         ) +
         theme_void() +
         theme(
@@ -497,15 +500,15 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
     } else {
       legend_plot <- ggplot() +
         geom_point(
-          aes(x = 1, y = 0.5, color = "Original"),
+          aes(x = 1, y = 0.5, color = "Training images"),
           size = 3, alpha = 0
         ) +
         geom_point(
-          aes(x = 2, y = 0.5, color = "New"),
+          aes(x = 2, y = 0.5, color = "Your images"),
           size = 3, alpha = 0
         ) +
         scale_color_manual(
-          values = c("Original" = "grey", "New" = "red")
+          values = c("Training images" = "grey", "Your images" = "red")
         ) +
         theme_void() +
         theme(
