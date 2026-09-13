@@ -83,7 +83,7 @@ show_test_image(your_dataset)
 ```
 
 <div class="figure">
-<img src="man/figures/README-load_cdascorer-1.png" alt="plot of chunk load_cdascorer" width="100%" />
+<img src="man/figures/README-load_cdascorer-1.png" alt="plot of chunk load_cdascorer" width="20%" />
 <p class="caption">plot of chunk load_cdascorer</p>
 </div>
 
@@ -98,7 +98,7 @@ show_test_image(your_dataset)
 ```
 
 <div class="figure">
-<img src="man/figures/README-load_images-1.png" alt="plot of chunk load_images" width="100%" />
+<img src="man/figures/README-load_images-1.png" alt="plot of chunk load_images" width="20%" />
 <p class="caption">plot of chunk load_images</p>
 </div>
 

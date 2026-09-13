@@ -90,7 +90,7 @@ AutoCDAScorer provides two ways of loading image datasets
 
 Option 1: You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
 
-```{r load_cdascorer, fig.width=2, fig.height=2}
+```{r load_cdascorer, fig.width=2, fig.height=2, out.width="20%"}
 cdascorer_output_path <- file.path(tempdir(), "cropped_images") # Where to save the crops
 
 your_dataset <- crop_and_load_images(input_path = tmp_cdascorer_csv, output_path = cdascorer_output_path)
@@ -100,7 +100,7 @@ show_test_image(your_dataset)
 
 Option 2: You can load already-cropped CDA TIFF images from a directory.
 
-```{r load_images, fig.width=2, fig.height=2}
+```{r load_images, fig.width=2, fig.height=2, out.width="20%"}
 image_directory <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE)
 your_dataset <- load_images(input_path = image_directory)
 
