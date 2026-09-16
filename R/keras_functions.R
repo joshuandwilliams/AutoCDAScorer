@@ -73,7 +73,7 @@ check_and_install_tensorflow <- function() {
 #' This function loads a pre-trained Keras model from the `extdata` directory of the `AutoCDAScorer` package.
 #'
 #' @param model_file A string naming the file to load. The backend is checked by the
-#'   caller, once, rather than here, since the ensemble loads seventeen of these.
+#'   caller, once, rather than here, since the ensemble loads sixteen of these.
 #'
 #' @return A Keras model object
 #'
@@ -133,7 +133,7 @@ predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
   }
 
   # Each family is averaged internally before the families are averaged together, so the
-  # seventeen networks of the ensemble do not outvote its one ordinal regression.
+  # sixteen networks of the ensemble do not outvote its one ordinal regression.
   parts <- list()
 
   if (length(keras_files) > 0) {

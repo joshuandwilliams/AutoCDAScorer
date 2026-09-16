@@ -92,5 +92,5 @@ test_that("predict_score reproduces the published test-split accuracies", {
   ord <- predict_score("ordinal", data, softmax = TRUE)
   ens <- predict_score("ensemble", data, softmax = TRUE)
   expect_equal(rowSums(ens), rep(1, nrow(ens)), tolerance = 1e-6)
-  expect_false(isTRUE(all.equal(ens, (nets + ord) / 2))) # 17 networks, not just 6848
+  expect_false(isTRUE(all.equal(ens, (nets + ord) / 2))) # 16 networks, not just 6848
 })

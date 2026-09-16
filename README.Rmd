@@ -53,7 +53,7 @@ CDAs, and to within one score on 92.80%.
 
 | Model Name | Description | Exact | Within 1 |
 |----|----|----|----|
-| "ensemble" | The seventeen CNNs below, averaged, then averaged with the ordinal regression. The most accurate option. | 69.16% | 98.38% |
+| "ensemble" | The sixteen CNNs below, averaged, then averaged with the ordinal regression. The most accurate option. | 68.83% | 98.38% |
 | "geom_cnn" | The single best CNN, trained on geometrically augmented crops. | 66.88% | 99.03% |
 | "ordinal" | Ordinal regression on twelve hand-built colour, brightness and lesion-shape features. No neural network. | 63.31% | 96.43% |
 

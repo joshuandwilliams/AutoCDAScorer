@@ -3,7 +3,7 @@ test_that("check_valid_package_data valid inputs", {
     expect_no_error(check_valid_package_data(name, pca = FALSE))
     expect_no_error(check_valid_package_data(name, pca = TRUE))
   }
-  expect_length(check_valid_package_data("ensemble", pca = FALSE), 18) # 17 networks + ordinal
+  expect_length(check_valid_package_data("ensemble", pca = FALSE), 17) # 16 networks + ordinal
 })
 
 test_that("check_valid_package_data invalid inputs", {

@@ -6,7 +6,7 @@
 #' @param pca A logical indicating whether to check for a PCA object (TRUE) or a model (FALSE). Defaults to FALSE.
 #'
 #' @return The filenames associated with the valid data object name. One for everything
-#'   except the ensemble, which is its 17 networks plus the ordinal regression.
+#'   except the ensemble, which is its 16 networks plus the ordinal regression.
 #'
 #' @keywords internal
 #' @noRd
@@ -19,11 +19,11 @@ check_valid_package_data <- function(name, pca = FALSE) {
     stop("Error: 'pca' must be a logical (TRUE/FALSE)")
   }
 
-  # The 17 geometric-augmentation CNNs whose cross-validation accuracy on original crops
-  # ties within one standard error of the best. 6848 tops that ranking and the held-out
-  # ensemble split, so it is also the single-model option.
-  geom_cnn <- paste0("geom_cnn_", c(1389, 3554, 3607, 5712, 5763, 5764, 5766, 6722, 6776,
-                                    6792, 6846, 6848, 7855, 7856, 7872, 7905, 7927), ".keras")
+  # The 16 geometric-augmentation CNNs whose cross-validation accuracy ties within one
+  # standard error of the best. 6848 tops the held-out ensemble split, so it is also the
+  # single-model option.
+  geom_cnn <- paste0("geom_cnn_", c(2473, 3549, 3553, 5658, 5712, 5768, 6789, 6794, 6829,
+                                    6843, 6848, 7855, 7873, 7908, 7923, 7927), ".keras")
 
   if (pca == FALSE) {
     type = "model"

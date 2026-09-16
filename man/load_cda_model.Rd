@@ -8,7 +8,7 @@ load_cda_model(model_file)
 }
 \arguments{
 \item{model_file}{A string naming the file to load. The backend is checked by the
-caller, once, rather than here, since the ensemble loads seventeen of these.}
+caller, once, rather than here, since the ensemble loads sixteen of these.}
 }
 \value{
 A Keras model object
