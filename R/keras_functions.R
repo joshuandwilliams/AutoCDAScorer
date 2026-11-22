@@ -104,10 +104,11 @@ load_cda_model <- function(model_file) {
 #' Predict the score for a batch of images using a CDAScorer Keras model
 #'
 #' This function returns either the raw softmax probabilities or the predicted score for a set of images.
-#' Optionally this function can save the predicted annotations to a csv file.
+#' Optionally this function can save the predicted scores to a CSV file.
 #'
 #' @param model A string corresponding to a specific Keras model.
-#' @param data A data list containing a 4D array of images (height, width, channels, num_images).
+#' @param data A data list containing a 4D array of images (images, height, width, channels), as returned by
+#'   [load_images()] or [crop_and_load_images()].
 #' @param output_path The file path where the CSV file should be saved.
 #' @param softmax A boolean to return raw softmax values (TRUE) or the predicted score (FALSE). Default is FALSE.
 #'

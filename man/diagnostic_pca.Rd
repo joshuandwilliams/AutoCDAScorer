@@ -27,7 +27,7 @@ diagnostic_pca(
 
 \item{num_bins}{An integer specifying the number of bins for the \code{"density"} plot type (default: 3).}
 
-\item{output_path}{A filepath to save the plot to.}
+\item{output_path}{A file path to save the plot to.}
 }
 \value{
 A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.

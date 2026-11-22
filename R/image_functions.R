@@ -83,10 +83,12 @@ load_cdascorer_dataframe <- function(path) {
 
 #' Crop and load images using CDAScorer dataframe
 #'
-#' This function takes a path to a CDAScorer dataframe and crops images based on the coordinates in the dataframe.
+#' This function takes a path to a CSV of bounding boxes, from CDALabeller or CDAScorer, and crops each cell death
+#' area (CDA) from its source image.
 #' The cropped images are loaded into memory, and optionally saved to an output directory.
 #'
-#' @param input_path A string representing the filepath of a CDAScorer CSV.
+#' @param input_path A string representing the file path of a CSV of bounding boxes from CDALabeller or
+#'   CDAScorer.
 #' @param image_size An integer for the resizing of loaded images. Default is 64.
 #' @param output_path A string representing the directory where the cropped images should be saved. If NULL, images are
 #'   not saved.
@@ -319,11 +321,11 @@ show_test_image <- function(data) {
 
 #' Convert RGB to BGR
 #'
-#' This function takes a converts a 4D image array from RGB to BGR by reordering the color channels.
+#' Converts a 4D image array from RGB to BGR by reordering the colour channels.
 #'
-#' @param data A dataset containing images, where images are stored in a 4D array, where the 4th dimension is RGB colour
+#' @param data A dataset containing images, stored in a 4D array whose fourth dimension is RGB colour
 #'
-#' @return A dataset whose images have the same structure, but the color channels reordered to BGR.
+#' @return A dataset whose images have the same structure, but the colour channels reordered to BGR.
 #'
 #' @examples
 #' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")

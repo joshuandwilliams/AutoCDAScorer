@@ -25,5 +25,5 @@ A numeric matrix representing the PCA-transformed data (n_samples, n_components)
 }
 \description{
 Applies Principal Component Analysis (PCA) transformation to input data,
-mirroring the behavior of sklearn's PCA.transform() method.
+mirroring the behaviour of sklearn's PCA.transform() method.
 }

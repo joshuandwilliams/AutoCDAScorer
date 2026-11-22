@@ -17,7 +17,7 @@ load_result_pca <- function(data) {
 #' PCA Transformation
 #'
 #' Applies Principal Component Analysis (PCA) transformation to input data,
-#' mirroring the behavior of sklearn's PCA.transform() method.
+#' mirroring the behaviour of sklearn's PCA.transform() method.
 #'
 #' @param data The input data. Can be either:
 #'   - A 4D numeric array (n_samples, height, width, channels) representing images.
@@ -338,7 +338,7 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
 #' @param plot_type A string specifying the type of plot: `"target"`, `"density"`, or `"convexhull"`.
 #' @param num_ellipses An integer specifying the number of ellipses for the `"target"` plot type (default: 3).
 #' @param num_bins An integer specifying the number of bins for the `"density"` plot type (default: 3).
-#' @param output_path A filepath to save the plot to.
+#' @param output_path A file path to save the plot to.
 #'
 #' @return A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
 #'

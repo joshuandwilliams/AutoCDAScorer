@@ -7,7 +7,8 @@
 crop_and_load_images(input_path, image_size = 64, output_path = NULL)
 }
 \arguments{
-\item{input_path}{A string representing the filepath of a CDAScorer CSV.}
+\item{input_path}{A string representing the file path of a CSV of bounding boxes from CDALabeller or
+CDAScorer.}
 
 \item{image_size}{An integer for the resizing of loaded images. Default is 64.}
 
@@ -23,7 +24,8 @@ A list containing:
 }
 }
 \description{
-This function takes a path to a CDAScorer dataframe and crops images based on the coordinates in the dataframe.
+This function takes a path to a CSV of bounding boxes, from CDALabeller or CDAScorer, and crops each cell death
+area (CDA) from its source image.
 The cropped images are loaded into memory, and optionally saved to an output directory.
 }
 \examples{

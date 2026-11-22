@@ -7,13 +7,13 @@
 rgb_to_bgr(data)
 }
 \arguments{
-\item{data}{A dataset containing images, where images are stored in a 4D array, where the 4th dimension is RGB colour}
+\item{data}{A dataset containing images, stored in a 4D array whose fourth dimension is RGB colour}
 }
 \value{
-A dataset whose images have the same structure, but the color channels reordered to BGR.
+A dataset whose images have the same structure, but the colour channels reordered to BGR.
 }
 \description{
-This function takes a converts a 4D image array from RGB to BGR by reordering the color channels.
+Converts a 4D image array from RGB to BGR by reordering the colour channels.
 }
 \examples{
 cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
