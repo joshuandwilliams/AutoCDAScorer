@@ -1,234 +1,109 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-
-
-# AutoCDAScorer
+# AutoCDAScorer <img src="man/figures/logo.png" align="right" height="120" alt="" />
 
 <!-- badges: start -->
 
-[![codecov](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg?token=DVSFFFKKQ4)](https://app.codecov.io/gh/joshuandwilliams/AutoCDAScorer) [![R CMD check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) ![R](https://img.shields.io/badge/R-%3E=3.5.0-1e90ff?logo=r) [![keras version](https://img.shields.io/badge/keras-%3E=3.15.0-orange)](https://keras.io/)
+[![R CMD
+check](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/joshuandwilliams/AutoCDAScorer/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/joshuandwilliams/AutoCDAScorer/graph/badge.svg)](https://app.codecov.io/gh/joshuandwilliams/AutoCDAScorer)
+[![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+![R](https://img.shields.io/badge/R-%3E=4.1.0-1e90ff?logo=r)
+[![Keras](https://img.shields.io/badge/keras-%3E=3.15.0-orange)](https://keras.io/)
 
 <!-- badges: end -->
 
-The goal of AutoCDAScorer is to make scoring cell death areas on UV spectra agroinfiltration images faster, more consistent, and less subjective.
+AutoCDAScorer scores cell death areas (CDAs) in UV agroinfiltration
+images of *Nicotiana benthamiana* leaves. It gives each CDA a cell death
+severity score from 0 (no cell death) to 6 (strong cell death). Scoring
+by eye is slow and varies between raters. AutoCDAScorer’s best model
+agrees with the consensus score about as often as human raters do.
 
-AutoCDAScorer uses deep learning models trained on UV spectra agroinfiltration images to automatically predict cell death severity between 0 (no cell death) and 6 (strong cell death).
+Its diagnostic plots show whether your CDA images resemble the images
+the models were trained on. Models are only reliable on images like
+their training data, so check these plots before trusting the scores.
+
+<figure>
+<img src="man/figures/README-diagnostic.png"
+alt="A convex hull diagnostic plot for the example CDA images. Grey points are training images. Blue points are your images inside the training range, and red points are outside it." />
+<figcaption aria-hidden="true">A convex hull diagnostic plot for the
+example CDA images. Grey points are training images. Blue points are
+your images inside the training range, and red points are outside
+it.</figcaption>
+</figure>
 
 ## Installation
 
-You can install the development version of AutoCDAScorer from [GitHub](https://github.com/) with:
-
-
-``` r
-install.packages("devtools")
-devtools::install_github("joshuandwilliams/AutoCDAScorer")
-```
-
-AutoCDAScorer's image segmentation uses [EBImage](https://bioconductor.org/packages/EBImage/), which is a Bioconductor package rather than a CRAN one. `devtools::install_github()` handles this for you.
-
-The package also uses TensorFlow, through Keras 3.15.0 or newer. Older versions of Keras cannot read the packaged models. If you already have a suitable environment you can point R at it with `reticulate::use_condaenv()`. Otherwise install one from within R:
+AutoCDAScorer needs R 4.1.0 or later. Install it from GitHub with `pak`:
 
 ``` r
-library(AutoCDAScorer)
-check_and_install_tensorflow()
+install.packages("pak")
+pak::pak("joshuandwilliams/AutoCDAScorer")
 ```
 
-This installation only needs to be done once. After that, TensorFlow will remain installed unless you actively remove it.
+`pak` also installs EBImage, which comes from Bioconductor rather than
+CRAN.
 
-## Models available
+The models run in Python, through Keras 3.15.0 or later. Older versions
+of Keras cannot read them. To set up Python and Keras, run this once:
 
-Each model is scored once on the same held-out 308 CDAs, which no model saw during
-training or selection. Human raters agree with the consensus score on 68.92% of those
-CDAs, and to within one score on 92.80%.
+``` r
+AutoCDAScorer::check_and_install_tensorflow()
+```
 
-| Model Name | Description | Exact | Within 1 |
+If you already have a suitable Python environment, point R at it with
+`reticulate::use_condaenv()` instead.
+
+## Models
+
+Each model was tested on the same 308 CDA images, which no model saw
+during training or selection. On those images, human raters agree with
+the consensus score 68.92% of the time, and to within one score 92.80%
+of the time.
+
+| Model | Description | Exact | Within one score |
 |----|----|----|----|
-| "ensemble" | The sixteen CNNs below, averaged, then averaged with the ordinal regression. The most accurate option. | 68.83% | 98.38% |
-| "geom_cnn" | The single best CNN, trained on geometrically augmented crops. | 66.88% | 99.03% |
-| "ordinal" | Ordinal regression on twelve hand-built colour, brightness and lesion-shape features. No neural network. | 63.31% | 96.43% |
+| `"ensemble"` | The 16 CNNs below averaged together, then averaged with the ordinal regression model. The most accurate option. | 68.83% | 98.38% |
+| `"geom_cnn"` | The single best CNN, trained on geometrically augmented CDA images. | 66.88% | 99.03% |
+| `"ordinal"` | Ordinal regression on 12 hand-crafted colour, brightness and shape features. No neural network. | 63.31% | 96.43% |
 
-`"ensemble"` and `"geom_cnn"` share a training set, so they share a diagnostic plot.
-`"ordinal"` was fitted on a smaller set of real crops only, so it has its own.
+`"ensemble"` and `"geom_cnn"` were trained on the same images, so they
+share a diagnostic plot. `"ordinal"` was trained on a smaller set of
+real CDA images only, so it has its own.
 
-## Usage
-
-
-
-This is an example workflow to show loading image datasets, checking whether they are appropriate for AutoCDAScorer's models using diagnostic plots, and finally making score predictions.
-
+## Using AutoCDAScorer
 
 ``` r
 library(AutoCDAScorer)
+
+# Load cropped CDA images from a folder
+cdas <- load_images("path/to/cropped/cdas")
+
+# Or crop them from source images, using bounding boxes from CDALabeller.
+# Run this from the folder that holds the source images.
+cdas <- crop_and_load_images("bounding_boxes.csv")
+
+# Check that the images resemble the training images
+diagnostic_pca("ensemble", cdas, num_pcs = 5, plot_type = "convexhull")
+
+# Score them
+predict_score("ensemble", cdas)
 ```
 
+To record bounding boxes around CDAs in source images, use
+[CDALabeller](https://github.com/joshuandwilliams/CDALabeller).
 
+## Guide
 
-## Load CDA image dataset
+The
+[guide](https://github.com/joshuandwilliams/AutoCDAScorer/blob/master/vignettes/AutoCDAScorer.Rmd)
+works through each step with example images and explains how to read the
+diagnostic plots.
 
-AutoCDAScorer provides two ways of loading image datasets
-
-Option 1: You can load an existing CDAScorer dataframe, which includes raw images and the coordinates of CDAs to be cropped.
-
+## Citing AutoCDAScorer
 
 ``` r
-cdascorer_output_path <- file.path(tempdir(), "cropped_images") # Where to save the crops
-
-your_dataset <- crop_and_load_images(input_path = tmp_cdascorer_csv, output_path = cdascorer_output_path)
-
-show_test_image(your_dataset)
-```
-
-<div class="figure">
-<img src="man/figures/README-load_cdascorer-1.png" alt="plot of chunk load_cdascorer" width="20%" />
-<p class="caption">plot of chunk load_cdascorer</p>
-</div>
-
-Option 2: You can load already-cropped CDA TIFF images from a directory.
-
-
-``` r
-image_directory <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer", mustWork = TRUE)
-your_dataset <- load_images(input_path = image_directory)
-
-show_test_image(your_dataset)
-```
-
-<div class="figure">
-<img src="man/figures/README-load_images-1.png" alt="plot of chunk load_images" width="20%" />
-<p class="caption">plot of chunk load_images</p>
-</div>
-
-## Diagnostic plots
-
-AutoCDAScorer provides three types of diagnostic plot to help you gauge whether your images fall within the variation of those seen by the model training. This is important, since models only make accurate predictions on images similar to those they have been trained on.
-
-#### How to interpret these plots?
-
-These diagnostic plots are based on principal components analysis (PCA). The grey cloud represents the image dataset the models were trained on. Your images are more likely to receive accurate score predictions if they fall within this region across all subplots.
-
-
-``` r
-rds_path <- system.file("extdata/example_dataset/training_subset/good_dataset.rds", package = "AutoCDAScorer", mustWork = TRUE)
-good_dataset <- readRDS(rds_path)
-
-convexhull_plot <- diagnostic_pca(
-  "ensemble",
-  good_dataset,
-  num_pcs = 5,
-  plot_type = "convexhull",
-  output_path = NULL
-)
-convexhull_plot
-```
-
-<div class="figure">
-<img src="man/figures/README-positive_diagnostic-1.png" alt="plot of chunk positive_diagnostic" width="100%" />
-<p class="caption">plot of chunk positive_diagnostic</p>
-</div>
-
-If your images appear outside of the grey cloud (i.e. are different to those used in training), we do not recommend using AutoCDAScorer.
-
-
-``` r
-bad_dataset <- good_dataset
-bad_dataset$images <- bad_dataset$images[,,,c(3,1,2)] # Mix up the colour channels to make a "bad" set of images
-
-convexhull_plot <- diagnostic_pca(
-  "ensemble",
-  bad_dataset,
-  num_pcs = 5,
-  plot_type = "convexhull",
-  output_path = NULL
-)
-convexhull_plot
-```
-
-<div class="figure">
-<img src="man/figures/README-negative_diagnostic-1.png" alt="plot of chunk negative_diagnostic" width="100%" />
-<p class="caption">plot of chunk negative_diagnostic</p>
-</div>
-
-Sometimes it will be unclear if your images are appropriate for use with AutoCDAScorer. Perhaps some of your images are consistently within the grey cloud whilst others aren't. You should try diagnostic plots using different models to find one whose training images best match your images.
-
-To help you decide, each scatter plot in the top left (coordinates A, B) is paired with an importance plot in the bottom right (coordinates B, A). You should pay more attention to plots with higher importance percentages, since the points on these plots are more reflective of the true similarity between your images and the training images.
-
-
-``` r
-target_plot <- diagnostic_pca(
-  model = "ensemble",
-  your_data = your_dataset,
-  num_pcs = 5,
-  plot_type = "target",
-  num_ellipses = 3
-)
-target_plot
-```
-
-<div class="figure">
-<img src="man/figures/README-real_diagnostic-1.png" alt="plot of chunk real_diagnostic" width="100%" />
-<p class="caption">plot of chunk real_diagnostic</p>
-</div>
-
-``` r
-contour_plot <- diagnostic_pca(
-  model = "ensemble",
-  your_data = your_dataset,
-  num_pcs = 5,
-  plot_type = "density",
-  num_bins = 5
-)
-contour_plot
-```
-
-<div class="figure">
-<img src="man/figures/README-real_diagnostic-2.png" alt="plot of chunk real_diagnostic" width="100%" />
-<p class="caption">plot of chunk real_diagnostic</p>
-</div>
-
-``` r
-convexhull_plot <- diagnostic_pca(
-  model = "ensemble",
-  your_data = your_dataset,
-  num_pcs = 5,
-  plot_type = "convexhull"
-)
-convexhull_plot
-```
-
-<div class="figure">
-<img src="man/figures/README-real_diagnostic-3.png" alt="plot of chunk real_diagnostic" width="100%" />
-<p class="caption">plot of chunk real_diagnostic</p>
-</div>
-
-## Make score predictions
-
-Once you've identified a model whose training images are similar to your own images, you can have that model make predictions on your images.
-
-You can choose the results to be returned as scores between 0-6 (0 = no cell death, 6 = strong cell death) or softmax probabilities (with one column for each score 0-6).
-
-
-``` r
-your_predictions <- predict_score(model = "ensemble", data = your_dataset, softmax = FALSE)
-```
-
-```
-#> Your images are more red than blue, so they are in RGB. Converting to BGR for the model.
-```
-
-```
-#> [1] "TensorFlow and Keras 3.15.0 backend are already available."
-```
-
-``` r
-table(your_predictions)
-```
-
-```
-#> your_predictions
-#>  0  1  3  4  5  6 
-#> 52  2  3  1  2  1
+citation("AutoCDAScorer")
 ```
