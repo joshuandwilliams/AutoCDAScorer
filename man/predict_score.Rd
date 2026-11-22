@@ -22,3 +22,11 @@ An object containing either the raw softmax values (matrix) or the predicted sco
 This function returns either the raw softmax probabilities or the predicted score for a set of images.
 Optionally this function can save the predicted annotations to a csv file.
 }
+\examples{
+\dontrun{
+# Needs a Keras 3.15.0+ backend; see check_and_install_tensorflow()
+cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+cdas <- load_images(cropped)
+predict_score("ensemble", cdas)
+}
+}

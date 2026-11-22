@@ -343,6 +343,10 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
 #' @return A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
 #'
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' cdas <- load_images(cropped)
+#' diagnostic_pca("ensemble", cdas, num_pcs = 3, plot_type = "convexhull")
 #' @export
 diagnostic_pca <- function(
     model = "ensemble",

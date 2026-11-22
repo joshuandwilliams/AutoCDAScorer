@@ -37,3 +37,8 @@ This function generates a grid of scatter plots comparing original and new featu
 all pairwise combinations of principal components (PCs). It supports different visualization
 styles: target-based ellipses, density contours, or convex hulls.
 }
+\examples{
+cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+cdas <- load_images(cropped)
+diagnostic_pca("ensemble", cdas, num_pcs = 3, plot_type = "convexhull")
+}

@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # Run the skip_on_cran() Keras tests, which need the Python backend
+      NOT_CRAN: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
