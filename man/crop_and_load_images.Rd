@@ -7,11 +7,13 @@
 crop_and_load_images(input_path, image_size = 64, output_path = NULL)
 }
 \arguments{
-\item{input_path}{A string representing the filepath of a CDAScorer CSV.}
+\item{input_path}{A string representing the file path of a CSV of bounding boxes from CDALabeller or
+CDAScorer.}
 
 \item{image_size}{An integer for the resizing of loaded images. Default is 64.}
 
-\item{output_path}{A string representing the directory where the cropped images should be saved. If NULL, images are not saved.}
+\item{output_path}{A string representing the directory where the cropped images should be saved. If NULL, images are
+not saved.}
 }
 \value{
 A list containing:
@@ -22,6 +24,17 @@ A list containing:
 }
 }
 \description{
-This function takes a path to a CDAScorer dataframe and crops images based on the coordinates in the dataframe.
+This function takes a path to a CSV of bounding boxes, from CDALabeller or CDAScorer, and crops each cell death
+area (CDA) from its source image.
 The cropped images are loaded into memory, and optionally saved to an output directory.
+}
+\examples{
+# The example CSV names its source image without a folder, so add the folder
+example_dir <- system.file("extdata", "example_dataset", package = "AutoCDAScorer")
+boxes <- utils::read.csv(file.path(example_dir, "cdascorer_example.csv"))
+boxes$img <- file.path(example_dir, "raw_images", boxes$img)
+csv <- tempfile(fileext = ".csv")
+utils::write.csv(boxes, csv, row.names = FALSE)
+cdas <- crop_and_load_images(csv)
+dim(cdas$images)
 }

@@ -2,8 +2,6 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
-^dev$
-^\.git$
 ^\.github$
 ^\.Rhistory$
 ^doc$
@@ -13,3 +11,4 @@
 ^\.pre-commit-hooks$
 ^README\.html$
 ^\.claude$
+^cran-comments\.md$

@@ -27,7 +27,7 @@ diagnostic_pca(
 
 \item{num_bins}{An integer specifying the number of bins for the \code{"density"} plot type (default: 3).}
 
-\item{output_path}{A filepath to save the plot to.}
+\item{output_path}{A file path to save the plot to.}
 }
 \value{
 A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
@@ -36,4 +36,9 @@ A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid fo
 This function generates a grid of scatter plots comparing original and new features across
 all pairwise combinations of principal components (PCs). It supports different visualization
 styles: target-based ellipses, density contours, or convex hulls.
+}
+\examples{
+cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+cdas <- load_images(cropped)
+diagnostic_pca("ensemble", cdas, num_pcs = 3, plot_type = "convexhull")
 }

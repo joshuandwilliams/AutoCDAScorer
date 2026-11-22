@@ -13,5 +13,10 @@ show_test_image(data)
 A visual output of the first image in the dataset.
 }
 \description{
-This function displays the first image from the given dataset using \code{rasterGrob} and \code{grid.draw} from the \code{grid} package.
+This function displays the first image from the given dataset using \code{rasterGrob} and \code{grid.draw} from the \code{grid}
+package.
+}
+\examples{
+cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+show_test_image(load_images(cropped))
 }

@@ -12,7 +12,11 @@ KERAS_MINIMUM <- numeric_version("3.15.0")
 #'
 #' @return Invisibly returns TRUE if a new enough backend is available, FALSE otherwise.
 #'
-#' @import keras3
+#' @examples
+#' \dontrun{
+#' # Installs Python, TensorFlow and Keras if they are missing
+#' check_and_install_tensorflow()
+#' }
 #' @export
 check_and_install_tensorflow <- function() {
   # First try to load the keras3 package
@@ -23,16 +27,19 @@ check_and_install_tensorflow <- function() {
 
   # Reading the version both reaches the backend and reports what it is
   version <- tryCatch(numeric_version(keras3::keras$`__version__`),
-                      error = function(e) NULL)
+    error = function(e) NULL
+  )
 
   if (!is.null(version)) {
     if (version >= KERAS_MINIMUM) {
       print(paste0("TensorFlow and Keras ", version, " backend are already available."))
       return(invisible(TRUE))
     }
-    print(paste0("Keras ", version, " is too old to load AutoCDAScorer's models, which need ",
-                 KERAS_MINIMUM, " or newer. Upgrade with keras3::install_keras(), or point ",
-                 "reticulate at an environment that has it."))
+    print(paste0(
+      "Keras ", version, " is too old to load AutoCDAScorer's models, which need ",
+      KERAS_MINIMUM, " or newer. Upgrade with keras3::install_keras(), or point ",
+      "reticulate at an environment that has it."
+    ))
     return(invisible(FALSE))
   }
 
@@ -41,30 +48,36 @@ check_and_install_tensorflow <- function() {
 
   if (tolower(user_input) %in% c("yes", "y")) {
     print("Installing TensorFlow and dependencies using keras3::install_keras()...")
-    tryCatch({
-      # install_keras() takes no version arguments; it installs the newest Keras 3.x.
-      keras3::install_keras()
-      keras3::use_backend("tensorflow")
+    tryCatch(
+      {
+        # install_keras() takes no version arguments; it installs the newest Keras 3.x.
+        keras3::install_keras()
+        keras3::use_backend("tensorflow")
 
-      # Check again if keras can be initialized
-      success2 <- tryCatch(numeric_version(keras3::keras$`__version__`) >= KERAS_MINIMUM,
-                           error = function(e) FALSE)
+        # Check again if keras can be initialized
+        success2 <- tryCatch(numeric_version(keras3::keras$`__version__`) >= KERAS_MINIMUM,
+          error = function(e) FALSE
+        )
 
-      if (success2) {
-        print("TensorFlow installation successful.")
-        return(invisible(TRUE))
-      } else {
-        print(paste0("TensorFlow installation completed, but a Keras ", KERAS_MINIMUM,
-                     " or newer backend is still not available. Please check your Python environment."))
-        return(invisible(FALSE))
+        if (success2) {
+          print("TensorFlow installation successful.")
+          return(invisible(TRUE))
+        } else {
+          print(paste0(
+            "TensorFlow installation completed, but a Keras ", KERAS_MINIMUM,
+            " or newer backend is still not available. Please check your Python environment."
+          ))
+          return(invisible(FALSE))
+        }
+      },
+      error = function(e) {
+        print(paste("TensorFlow installation failed:", conditionMessage(e)))
+        invisible(FALSE)
       }
-    }, error = function(e) {
-      print(paste("TensorFlow installation failed:", conditionMessage(e)))
-      return(invisible(FALSE))
-    })
+    )
   } else {
     print("TensorFlow installation skipped. Model functions will not work until TensorFlow is installed.")
-    return(invisible(FALSE))
+    invisible(FALSE)
   }
 }
 
@@ -77,7 +90,6 @@ check_and_install_tensorflow <- function() {
 #'
 #' @return A Keras model object
 #'
-#' @import keras3
 load_cda_model <- function(model_file) {
   path <- system.file("extdata", model_file, package = "AutoCDAScorer")
   model <- keras3::load_model(path)
@@ -86,27 +98,32 @@ load_cda_model <- function(model_file) {
     stop("Error: Loaded model is not a valid Keras model")
   }
 
-  return(model)
+  model
 }
 
 #' Predict the score for a batch of images using a CDAScorer Keras model
 #'
 #' This function returns either the raw softmax probabilities or the predicted score for a set of images.
-#' Optionally this function can save the predicted annotations to a csv file.
+#' Optionally this function can save the predicted scores to a CSV file.
 #'
 #' @param model A string corresponding to a specific Keras model.
-#' @param data A data list containing a 4D array of images (height, width, channels, num_images).
+#' @param data A data list containing a 4D array of images (images, height, width, channels), as returned by
+#'   [load_images()] or [crop_and_load_images()].
 #' @param output_path The file path where the CSV file should be saved.
 #' @param softmax A boolean to return raw softmax values (TRUE) or the predicted score (FALSE). Default is FALSE.
 #'
 #' @return An object containing either the raw softmax values (matrix) or the predicted scores (vector).
 #'
-#' @import keras3
-#' @importFrom utils write.csv
 #'
+#' @examples
+#' \dontrun{
+#' # Needs a Keras 3.15.0+ backend; see check_and_install_tensorflow()
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' cdas <- load_images(cropped)
+#' predict_score("ensemble", cdas)
+#' }
 #' @export
 predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
-
   model_files <- check_valid_package_data(name = model, pca = FALSE)
   keras_files <- grep("\\.keras$", model_files, value = TRUE)
   ordinal_file <- grep("\\.rds$", model_files, value = TRUE)
@@ -124,8 +141,8 @@ predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
     }
   }
 
-  mean_ch1 <- mean(images[,,,1])
-  mean_ch3 <- mean(images[,,,3])
+  mean_ch1 <- mean(images[, , , 1])
+  mean_ch3 <- mean(images[, , , 3])
   if (mean_ch1 > mean_ch3) { # Images in RGB (BGR needed for model)
     message("Your images are more red than blue, so they are in RGB. Converting to BGR for the model.")
     bgr_data <- rgb_to_bgr(data)
@@ -147,21 +164,22 @@ predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
   if (length(ordinal_file) > 0) {
     features <- t(vapply(data$crops, cda_features, numeric(length(FEATURE_NAMES))))
     parts$ordinal <- ordinal_probs(
-      readRDS(system.file("extdata", ordinal_file, package = "AutoCDAScorer")), features)
+      readRDS(system.file("extdata", ordinal_file, package = "AutoCDAScorer")), features
+    )
   }
 
   softmax_predictions <- unname(Reduce(`+`, parts) / length(parts))
   predicted_classes <- as.integer(apply(softmax_predictions, 1, which.max) - 1)
 
-  if (!is.null(output_path)){
-    if (softmax == FALSE){
+  if (!is.null(output_path)) {
+    if (softmax == FALSE) {
       df <- data.frame(name = data$filenames, prediction = predicted_classes)
       df <- df[order(df$name), ]
     } else {
       df <- data.frame(name = data$filenames, softmax_predictions)
       colnames(df) <- c("name", 0:6)
     }
-    write.csv(df, output_path, row.names = FALSE)
+    utils::write.csv(df, output_path, row.names = FALSE)
   }
 
   if (softmax) {

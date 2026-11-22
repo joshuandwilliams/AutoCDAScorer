@@ -22,9 +22,11 @@ resize_bilinear <- function(img, n) {
   h <- ax(dim(img)[1])
   w <- ax(dim(img)[2])
   lerp <- function(A, B, a, m) sweep(A, m, 1 - a, "*") + sweep(B, m, a, "*")
-  lerp(lerp(img[h$i0, w$i0, , drop = FALSE], img[h$i0, w$i1, , drop = FALSE], w$a, 2),
-       lerp(img[h$i1, w$i0, , drop = FALSE], img[h$i1, w$i1, , drop = FALSE], w$a, 2),
-       h$a, 1)
+  lerp(
+    lerp(img[h$i0, w$i0, , drop = FALSE], img[h$i0, w$i1, , drop = FALSE], w$a, 2),
+    lerp(img[h$i1, w$i0, , drop = FALSE], img[h$i1, w$i1, , drop = FALSE], w$a, 2),
+    h$a, 1
+  )
 }
 
 #' Turn a magick image into the two arrays the models need
@@ -38,26 +40,26 @@ resize_bilinear <- function(img, n) {
 #' @return A list of `full` (height, width, 3) and `small` (n, n, 3), both RGB. `full` is
 #'   on a 0-1 scale and `small` on the 0-255/256 scale the models were trained on.
 #'
-#' @import magick
 #'
 #' @keywords internal
 #' @noRd
 image_arrays <- function(im, n) {
   info <- magick::image_info(im)
   full <- array(as.numeric(magick::image_data(im, channels = "rgb")),
-                dim = c(info$height, info$width, 3))
+    dim = c(info$height, info$width, 3)
+  )
   list(full = full, small = round(resize_bilinear(full * 255, n)) / 256)
 }
 
 #' Load CSV file in CDAScorer format
 #'
-#' This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns: "img", "x1", "x2", "y1", "y2".
+#' This function loads a CSV file into a dataframe, ensuring that the file exists and contains the required columns:
+#' "img", "x1", "x2", "y1", "y2".
 #'
 #' @param path A string representing the path to the CSV file.
 #'
 #' @return A dataframe containing the data from the CSV file.
 #'
-#' @import readr
 load_cdascorer_dataframe <- function(path) {
   if (!is.character(path)) {
     stop("Error: 'filepath' must be a character string")
@@ -70,40 +72,52 @@ load_cdascorer_dataframe <- function(path) {
   df <- readr::read_csv(path, show_col_types = FALSE)
 
   required_cols <- c("img", "x1", "x2", "y1", "y2")
-  if (!all(required_cols %in% colnames(df))){
-    stop(paste0("Error: cdascorer input CSV must contain the following columns: ", paste(required_cols, collapse = ", ")))
+  if (!all(required_cols %in% colnames(df))) {
+    stop(
+      paste0("Error: cdascorer input CSV must contain the following columns: ", paste(required_cols, collapse = ", "))
+    )
   }
 
-  return(df)
+  df
 }
 
 #' Crop and load images using CDAScorer dataframe
 #'
-#' This function takes a path to a CDAScorer dataframe and crops images based on the coordinates in the dataframe.
+#' This function takes a path to a CSV of bounding boxes, from CDALabeller or CDAScorer, and crops each cell death
+#' area (CDA) from its source image.
 #' The cropped images are loaded into memory, and optionally saved to an output directory.
 #'
-#' @param input_path A string representing the filepath of a CDAScorer CSV.
+#' @param input_path A string representing the file path of a CSV of bounding boxes from CDALabeller or
+#'   CDAScorer.
 #' @param image_size An integer for the resizing of loaded images. Default is 64.
-#' @param output_path A string representing the directory where the cropped images should be saved. If NULL, images are not saved.
+#' @param output_path A string representing the directory where the cropped images should be saved. If NULL, images are
+#'   not saved.
 #'
 #' @return A list containing:
 #' - `images`: a 4D array of cropped images, resized to `image_size`.
 #' - `crops`: a list of the same crops at their own resolution, for the feature models.
 #' - `filenames`: a character vector of filenames for the cropped images.
 #'
-#' @import magick
-#' @import fs
 #'
+#' @examples
+#' # The example CSV names its source image without a folder, so add the folder
+#' example_dir <- system.file("extdata", "example_dataset", package = "AutoCDAScorer")
+#' boxes <- utils::read.csv(file.path(example_dir, "cdascorer_example.csv"))
+#' boxes$img <- file.path(example_dir, "raw_images", boxes$img)
+#' csv <- tempfile(fileext = ".csv")
+#' utils::write.csv(boxes, csv, row.names = FALSE)
+#' cdas <- crop_and_load_images(csv)
+#' dim(cdas$images)
 #' @export
 crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL) {
   if (is.numeric(image_size)) {
     image_size <- as.integer(image_size)
   }
-  if (!is.integer(image_size)){
+  if (!is.integer(image_size)) {
     stop("Error: 'image_size' must be an integer")
   }
 
-  if (!is.null(output_path) ) {
+  if (!is.null(output_path)) {
     if (!is.character(output_path)) {
       stop("Error: 'output_path' must be a character string")
     } else {
@@ -113,7 +127,8 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
     }
   }
 
-  cdascorer <- load_cdascorer_dataframe(input_path) # No need to check for valid path - load_cdascorer_dataframe() handles this
+  # No need to check for valid path - load_cdascorer_dataframe() handles this
+  cdascorer <- load_cdascorer_dataframe(input_path)
 
   images <- vector("list", length = nrow(cdascorer))
   filenames <- character(length = nrow(cdascorer))
@@ -126,7 +141,8 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
     x2 <- cdascorer$x2[i]
     y1 <- cdascorer$y1[i]
     y2 <- cdascorer$y2[i]
-    if (img_path != prev_img_path) { # Check if current image path same as previous (prevents re-loading same images over and over)
+    # Check if current image path same as previous (prevents re-loading same images over and over)
+    if (img_path != prev_img_path) {
       image <- magick::image_read(img_path)
       prev_img_path <- img_path
     }
@@ -145,7 +161,9 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
       ))
     }
 
-    final_image <- magick::image_flatten(magick::image_crop(image, geometry = paste0(x2 - x1, "x", y2 - y1, "+", x1, "+", y1)))
+    final_image <- magick::image_flatten(
+      magick::image_crop(image, geometry = paste0(x2 - x1, "x", y2 - y1, "+", x1, "+", y1))
+    )
 
     cropped_filename <- paste0(fs::path_ext_remove(fs::path_file(img_path)), "_", i, ".tif")
 
@@ -156,17 +174,18 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
     filenames[i] <- cropped_filename
   }
 
-  images_array <- array(0, dim = c(length(images), image_size, image_size, 3)) # Of shape (batch, height, width, channels)
+  # Of shape (batch, height, width, channels)
+  images_array <- array(0, dim = c(length(images), image_size, image_size, 3))
 
   for (i in seq_along(images)) {
-    images_array[i,,,] <- images[[i]]$small
+    images_array[i, , , ] <- images[[i]]$small
   }
 
-  return(list(
+  list(
     images = images_array,
     crops = lapply(images, `[[`, "full"),
     filenames = filenames
-  ))
+  )
 }
 
 #' Load images and file names from a directory
@@ -174,16 +193,19 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
 #' Loads all `.tif` images from the given directory and immediate subdirectories.
 #'
 #' @param input_path A string specifying the directory containing images.
-#' @param image_size An integer specifying the size to which each image should be resized (width, height). Default is 64.
+#' @param image_size An integer specifying the size to which each image should be resized (width, height). Default is
+#'   64.
 #'
 #' @return A list containing:
 #'   \item{images}{A 4D array of images: n_images, height, width, channels}
 #'   \item{crops}{A list of the same images at their own resolution, for the feature models}
 #'   \item{filenames}{A vector of image file names}
 #'
-#' @import magick
-#' @importFrom fs dir_ls path_file dir_exists
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' cdas <- load_images(cropped)
+#' dim(cdas$images)
 #' @export
 load_images <- function(input_path, image_size = 64) {
   if (!is.character(input_path)) {
@@ -197,7 +219,7 @@ load_images <- function(input_path, image_size = 64) {
   if (is.numeric(image_size)) {
     image_size <- as.integer(image_size)
   }
-  if (!is.integer(image_size)){
+  if (!is.integer(image_size)) {
     stop("Error: 'image_size' must be an integer")
   }
 
@@ -223,7 +245,7 @@ load_images <- function(input_path, image_size = 64) {
     subdir_images <- fs::dir_ls(subdir, recurse = FALSE, type = "file")
     subdir_images <- subdir_images[grepl("\\.tif$", subdir_images, ignore.case = TRUE)]
 
-    for (image_path in subdir_images){
+    for (image_path in subdir_images) {
       image_paths[i] <- image_path
       filenames[i] <- fs::path_file(image_path)
       i <- i + 1
@@ -244,18 +266,23 @@ load_images <- function(input_path, image_size = 64) {
     } else {
       img_info <- magick::image_info(image)
       if (img_info$width != img_info$height) {
-        sprintf("Note: Input image %s is not square (Width: %d, Height: %d)", image_paths[i], img_info$width, img_info$height)
+        sprintf(
+          "Note: Input image %s is not square (Width: %d, Height: %d)",
+          image_paths[i],
+          img_info$width,
+          img_info$height
+        )
       }
       images[[i]] <- image_arrays(magick::image_flatten(image), image_size)
     }
   }
 
-  images <- images[!sapply(images, is.null)]  # Remove NULL images
+  images <- images[!sapply(images, is.null)] # Remove NULL images
 
   if (length(images) > 0) {
     images_array <- array(0, dim = c(length(images), image_size, image_size, 3))
     for (i in seq_along(images)) {
-      images_array[i,,,] <- images[[i]]$small
+      images_array[i, , , ] <- images[[i]]$small
     }
   } else {
     stop("Error: No images were loaded. Please check the directory or file types.")
@@ -263,45 +290,51 @@ load_images <- function(input_path, image_size = 64) {
 
   sprintf("%s images were loaded", length(images))
 
-  return(list(
+  list(
     images = images_array,
     crops = lapply(images, `[[`, "full"),
     filenames = filenames
-  ))
+  )
 }
 
 #' Display a test image from the dataset
 #'
-#' This function displays the first image from the given dataset using `rasterGrob` and `grid.draw` from the `grid` package.
+#' This function displays the first image from the given dataset using `rasterGrob` and `grid.draw` from the `grid`
+#' package.
 #'
 #' @param data A list containing an `images` array. The first image in the array will be displayed.
 #'
 #' @return A visual output of the first image in the dataset.
 #'
-#' @import grid
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' show_test_image(load_images(cropped))
 #' @export
 show_test_image <- function(data) {
   check_valid_data(data, images = TRUE, filenames = FALSE)
 
-  g <- grid::rasterGrob(data$images[1,,,])
+  g <- grid::rasterGrob(data$images[1, , , ])
   grid::grid.newpage()
   grid::grid.draw(g)
 }
 
 #' Convert RGB to BGR
 #'
-#' This function takes a converts a 4D image array from RGB to BGR by reordering the color channels.
+#' Converts a 4D image array from RGB to BGR by reordering the colour channels.
 #'
-#' @param data A dataset containing images, where images are stored in a 4D array, where the 4th dimension is RGB colour
+#' @param data A dataset containing images, stored in a 4D array whose fourth dimension is RGB colour
 #'
-#' @return A dataset whose images have the same structure, but the color channels reordered to BGR.
+#' @return A dataset whose images have the same structure, but the colour channels reordered to BGR.
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' bgr <- rgb_to_bgr(load_images(cropped))
 #' @export
-rgb_to_bgr <- function(data){
-  check_valid_data(data, images=TRUE, filenames=FALSE)
+rgb_to_bgr <- function(data) {
+  check_valid_data(data, images = TRUE, filenames = FALSE)
 
-  data$images = data$images[,,,c(3,2,1)]
+  data$images <- data$images[, , , c(3, 2, 1)]
 
-  return(data)
+  data
 }

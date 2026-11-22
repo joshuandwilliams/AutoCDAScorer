@@ -1,0 +1,132 @@
+---
+title: "Scoring cell death areas with AutoCDAScorer"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Scoring cell death areas with AutoCDAScorer}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = FALSE, comment = "#>")
+# Scoring needs the Python Keras backend. CRAN does not have it, so the scoring
+# step only runs where NOT_CRAN is set and Keras 3.15.0 or later can be reached.
+has_keras <- identical(Sys.getenv("NOT_CRAN"), "true") && isTRUE(tryCatch(
+  numeric_version(keras3::keras$`__version__`) >= "3.15.0",
+  error = function(e) FALSE
+))
+```
+
+This guide shows the three steps of scoring cell death areas (CDAs) with
+AutoCDAScorer. First you load the CDA images. Then you check, with diagnostic
+plots, that they resemble the images the models were trained on. Finally you
+score them.
+
+```{r setup}
+library(AutoCDAScorer)
+```
+
+## Load the CDA images
+
+There are two ways to load CDA images.
+
+### From source images and bounding boxes
+
+A source image shows several leaves, each with several infiltration sites. A
+CSV file gives a bounding box around each CDA. You can make that file with
+[CDALabeller](https://github.com/joshuandwilliams/CDALabeller), or with the
+older CDAScorer. `crop_and_load_images()` crops each CDA from its source image.
+
+The CSV needs the columns `img`, `x1`, `x2`, `y1` and `y2`. `img` is the path to
+the source image. CDALabeller saves only the file name, so either run R from
+the folder that holds the source images or add the folder first, as here:
+
+```{r load_from_boxes}
+example_dir <- system.file("extdata", "example_dataset", package = "AutoCDAScorer")
+boxes <- read.csv(file.path(example_dir, "cdascorer_example.csv"))
+boxes$img <- file.path(example_dir, "raw_images", boxes$img)
+boxes_csv <- tempfile(fileext = ".csv")
+write.csv(boxes, boxes_csv, row.names = FALSE)
+
+# output_path saves a copy of each cropped CDA image
+your_dataset <- crop_and_load_images(boxes_csv, output_path = file.path(tempdir(), "crops"))
+
+show_test_image(your_dataset)
+```
+
+### From cropped CDA images
+
+If your CDA images are already cropped, load them from their folder:
+
+```{r load_cropped}
+cropped_dir <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+your_dataset <- load_images(cropped_dir)
+
+show_test_image(your_dataset)
+```
+
+## Check the diagnostic plots
+
+Models are only reliable on images like the ones they were trained on. The
+diagnostic plots show how your CDA images compare with the training images.
+
+The plots use principal component analysis (PCA). PCA reduces each image to a
+few numbers, called principal components (PCs), that capture most of the
+differences between images. Each small plot shows the training images (grey)
+and your images on two PCs.
+
+There are three plot types. `"convexhull"` draws the outline of the training
+images. It colours your images blue if they fall inside it and red if not.
+`"target"` draws concentric ellipses around the training images, and
+`"density"` draws density contours.
+
+Here is a sample of the training images themselves. They all fall inside the
+outline, as they should:
+
+```{r inside, fig.height = 5, fig.width = 6}
+training_sample <- readRDS(file.path(example_dir, "training_subset", "good_dataset.rds"))
+diagnostic_pca("ensemble", training_sample, num_pcs = 5, plot_type = "convexhull")
+```
+
+The same images with their colour channels swapped no longer resemble the
+training images. Most fall outside the outline:
+
+```{r outside, fig.height = 5, fig.width = 6}
+swapped <- training_sample
+swapped$images <- swapped$images[, , , c(3, 1, 2)]
+diagnostic_pca("ensemble", swapped, num_pcs = 5, plot_type = "convexhull")
+```
+
+If most of your images fall outside the training images, do not rely on
+AutoCDAScorer's scores for them. If only some do, try the plots for another
+model. `"ordinal"` was trained on different images from `"ensemble"` and
+`"geom_cnn"`, so its plot can differ.
+
+Not every pair of PCs matters equally. The circles in the lower right show the
+share of the differences between images that each pair of PCs explains. Each
+circle matches the small plot in the mirror position across the diagonal. Give
+more weight to the plots whose circles show larger percentages.
+
+Here are all three plot types for the example CDA images:
+
+```{r all_types, fig.height = 5, fig.width = 6}
+diagnostic_pca("ensemble", your_dataset, num_pcs = 5, plot_type = "target", num_ellipses = 3)
+diagnostic_pca("ensemble", your_dataset, num_pcs = 5, plot_type = "density", num_bins = 5)
+diagnostic_pca("ensemble", your_dataset, num_pcs = 5, plot_type = "convexhull")
+```
+
+## Score the CDA images
+
+Once a model's diagnostic plots look right for your images, score them with
+that model. By default, `predict_score()` returns one cell death severity score
+per image, from 0 (no cell death) to 6 (strong cell death). With
+`softmax = TRUE`, it returns the probability of each score instead, with one
+column per score.
+
+```{r score, eval = has_keras}
+your_scores <- predict_score("ensemble", your_dataset)
+table(your_scores)
+```
+
+Scoring needs Python and Keras 3.15.0 or later. Run
+`check_and_install_tensorflow()` once to set them up.

@@ -6,18 +6,18 @@
 #'
 #' @return The loaded R object.
 load_result_pca <- function(data) {
-  pca_path = check_valid_package_data(name = data, pca = TRUE)
+  pca_path <- check_valid_package_data(name = data, pca = TRUE)
 
   path <- system.file("extdata", pca_path, package = "AutoCDAScorer")
   pca_data <- readRDS(path)
 
-  return(pca_data)
+  pca_data
 }
 
 #' PCA Transformation
 #'
 #' Applies Principal Component Analysis (PCA) transformation to input data,
-#' mirroring the behavior of sklearn's PCA.transform() method.
+#' mirroring the behaviour of sklearn's PCA.transform() method.
 #'
 #' @param data The input data. Can be either:
 #'   - A 4D numeric array (n_samples, height, width, channels) representing images.
@@ -29,7 +29,6 @@ load_result_pca <- function(data) {
 #'
 #' @return A numeric matrix representing the PCA-transformed data (n_samples, n_components).
 pca_transform <- function(data, pca) {
-
   check_valid_pca(pca, features_pca = FALSE, explained_variance = FALSE, principal_components = TRUE, center = TRUE)
   check_valid_data(data, images = TRUE, filenames = FALSE)
 
@@ -49,7 +48,16 @@ pca_transform <- function(data, pca) {
   }
 
   if (ncol(data) != length(pca_mean)) {
-    stop(sprintf("Error: Feature count in 'data' (%d) (image height x width x channels) does not match PCA training feature count (%d). Please check the dimensions of your new images.", ncol(data), length(pca_mean)))
+    stop(
+      sprintf(
+        paste(
+          "Error: Feature count in 'data' (%d) (image height x width x channels) does not match",
+          "PCA training feature count (%d). Please check the dimensions of your new images."
+        ),
+        ncol(data),
+        length(pca_mean)
+      )
+    )
   }
 
   # Transformation
@@ -58,9 +66,14 @@ pca_transform <- function(data, pca) {
 
   # 2. Center the projected data
   projected_mean <- matrix(pca_mean, nrow = 1) %*% pca_components
-  data_centered_projected <- data_projected - matrix(projected_mean, nrow = nrow(data_projected), ncol = ncol(projected_mean), byrow = TRUE)
+  data_centered_projected <- data_projected - matrix(
+    projected_mean,
+    nrow = nrow(data_projected),
+    ncol = ncol(projected_mean),
+    byrow = TRUE
+  )
 
-  return(data_centered_projected)
+  data_centered_projected
 }
 
 
@@ -78,8 +91,6 @@ pca_transform <- function(data, pca) {
 #'
 #' @return A ggplot2 object representing the PCA scatter plot with confidence ellipses.
 #'
-#' @import ggplot2
-#' @importFrom stats median
 pca_diagnostic_target <- function(pca, new_features, PC_a, PC_b, num_ellipses = 3) {
   PC_a <- as.integer(PC_a)
   PC_b <- as.integer(PC_b)
@@ -120,29 +131,29 @@ pca_diagnostic_target <- function(pca, new_features, PC_a, PC_b, num_ellipses = 
   }))
 
   # Build the plot
-  p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
-    geom_point(alpha = 0.5, size = 0.5) +
-    scale_color_manual(values = c("Training images" = "grey", "Your images" = "red")) +
-    theme_minimal() +
-    theme(
-      axis.title = element_blank(),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
+  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = PC_a, y = PC_b, color = .data$Type)) +
+    ggplot2::geom_point(alpha = 0.5, size = 0.5) +
+    ggplot2::scale_color_manual(values = c("Training images" = "grey", "Your images" = "red")) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.title = ggplot2::element_blank(),
+      axis.text = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
       legend.position = "none",
       aspect.ratio = 1, # square panels, so a PC pair reads the same in every cell
-      panel.grid = element_blank(),
-      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
-      plot.margin = unit(c(0, 0, 0, 0), "cm")
+      panel.grid = ggplot2::element_blank(),
+      panel.border = ggplot2::element_rect(color = "black", fill = NA, linewidth = 0.5),
+      plot.margin = grid::unit(c(0, 0, 0, 0), "cm")
     ) +
-    geom_path(
+    ggplot2::geom_path(
       data = ellipses_df,
-      aes(x = .data$x, y = .data$y, group = .data$group),
+      ggplot2::aes(x = .data$x, y = .data$y, group = .data$group),
       inherit.aes = FALSE,
       color = "blue",
       linetype = "dashed"
     )
 
-  return(p)
+  p
 }
 
 #' Scatter Plot of PCA-Transformed Features with Density Contours
@@ -158,8 +169,6 @@ pca_diagnostic_target <- function(pca, new_features, PC_a, PC_b, num_ellipses = 
 #'
 #' @return A ggplot2 object representing the PCA scatter plot with density contours.
 #'
-#' @import ggplot2
-#' @importFrom MASS kde2d
 pca_diagnostic_density <- function(pca, new_features, PC_a, PC_b, num_bins = 3) {
   PC_a <- as.integer(PC_a)
   PC_b <- as.integer(PC_b)
@@ -180,8 +189,10 @@ pca_diagnostic_density <- function(pca, new_features, PC_a, PC_b, num_bins = 3) 
   plot_data <- rbind(original_df, new_df)
 
   # 2D Density estimation (only from original data not new)
-  kde <- MASS::kde2d(original_features[, PC_a], original_features[, PC_b], n = 100,
-                     lims = c(range(plot_data$PC_a), range(plot_data$PC_b)))
+  kde <- MASS::kde2d(original_features[, PC_a], original_features[, PC_b],
+    n = 100,
+    lims = c(range(plot_data$PC_a), range(plot_data$PC_b))
+  )
 
   # Convert to dataframe for plotting
   kde_df <- data.frame(
@@ -190,29 +201,29 @@ pca_diagnostic_density <- function(pca, new_features, PC_a, PC_b, num_bins = 3) 
     z = as.vector(t(kde$z))
   )
 
-  p <- ggplot(plot_data, aes(x = PC_a, y = PC_b, color = .data$Type)) +
-    geom_point(alpha = 0.5, size = 0.5) +
-    scale_color_manual(values = c("Training images" = "grey", "Your images" = "red")) +
-    theme_minimal() +
-    theme(
-      axis.title = element_blank(),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
+  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = PC_a, y = PC_b, color = .data$Type)) +
+    ggplot2::geom_point(alpha = 0.5, size = 0.5) +
+    ggplot2::scale_color_manual(values = c("Training images" = "grey", "Your images" = "red")) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.title = ggplot2::element_blank(),
+      axis.text = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
       legend.position = "none",
       aspect.ratio = 1, # square panels, so a PC pair reads the same in every cell
-      panel.grid = element_blank(),
-      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
-      plot.margin = unit(c(0, 0, 0, 0), "cm")
+      panel.grid = ggplot2::element_blank(),
+      panel.border = ggplot2::element_rect(color = "black", fill = NA, linewidth = 0.5),
+      plot.margin = grid::unit(c(0, 0, 0, 0), "cm")
     ) +
-    geom_contour(
+    ggplot2::geom_contour(
       data = kde_df,
-      aes(x = .data$x, y = .data$y, z = .data$z),
+      ggplot2::aes(x = .data$x, y = .data$y, z = .data$z),
       color = "blue",
       bins = num_bins,
       linewidth = 0.5
     )
 
-  return(p)
+  p
 }
 
 #' Scatter Plot of PCA-Transformed Features with Convex Hull
@@ -227,10 +238,6 @@ pca_diagnostic_density <- function(pca, new_features, PC_a, PC_b, num_bins = 3) 
 #'
 #' @return A ggplot2 object representing the PCA scatter plot with a convex hull.
 #'
-#' @import ggplot2
-#' @importFrom dplyr filter
-#' @importFrom stats runif
-#' @importFrom geometry delaunayn tsearchn
 pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
   PC_a <- as.integer(PC_a)
   PC_b <- as.integer(PC_b)
@@ -255,12 +262,12 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
   }
 
   unique_original_points <- as.matrix(unique_original_points)
-  delaunay_tri <- delaunayn(unique_original_points, options = "Qt Qbb Qc Qz Q12")
+  delaunay_tri <- geometry::delaunayn(unique_original_points, options = "Qt Qbb Qc Qz Q12")
 
   # Point-in-hull test
   point_in_hull <- function(x_test, y_test) {
     test_points <- as.matrix(data.frame(x = x_test, y = y_test)) # Convert to matrix
-    !is.na(tsearchn(unique_original_points, delaunay_tri, test_points)$idx)
+    !is.na(geometry::tsearchn(unique_original_points, delaunay_tri, test_points)$idx)
   }
   inside <- point_in_hull(new_points$x, new_points$y)
 
@@ -276,26 +283,47 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
   original_data <- dplyr::filter(plot_data, .data$Type == "Training images")
   new_data <- dplyr::filter(plot_data, .data$Type %in% c("Your images, inside the hull", "Your images"))
 
+  # The hull outline, or NULL (which adds nothing) if there is no hull
+  hull_layer <- if (nrow(hull_points) > 0) {
+    ggplot2::geom_polygon(
+      data = hull_points,
+      ggplot2::aes(x = .data$x, y = .data$y),
+      fill = NA,
+      color = "black",
+      alpha = 0.5,
+      linetype = "solid"
+    )
+  }
+
   # Plotting
-  p <- ggplot() +
-    geom_point(data = original_data, aes(x = PC_a, y = PC_b), color = "grey", alpha = 0.5, size = 0.5) +
-    geom_point(data = new_data, aes(x = PC_a, y = PC_b, color = .data$Type), alpha = 0.5, size = 0.5) +
-    scale_color_manual(values = c("Your images, inside the hull" = "blue", "Your images" = "red")) +
-    {if(nrow(hull_points) > 0) geom_polygon(data = hull_points, aes(x = .data$x, y = .data$y), fill = NA, color = "black", alpha = 0.5, linetype = "solid")} +
-    theme_minimal() +
-    theme(
-      axis.title = element_blank(),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
+  ggplot2::ggplot() +
+    ggplot2::geom_point(
+      data = original_data,
+      ggplot2::aes(x = PC_a, y = PC_b),
+      color = "grey",
+      alpha = 0.5,
+      size = 0.5
+    ) +
+    ggplot2::geom_point(
+      data = new_data,
+      ggplot2::aes(x = PC_a, y = PC_b, color = .data$Type),
+      alpha = 0.5,
+      size = 0.5
+    ) +
+    ggplot2::scale_color_manual(values = c("Your images, inside the hull" = "blue", "Your images" = "red")) +
+    hull_layer +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.title = ggplot2::element_blank(),
+      axis.text = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
       legend.position = "none",
       aspect.ratio = 1, # square panels, so a PC pair reads the same in every cell
-      panel.grid = element_blank(),
-      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
-      plot.margin = unit(c(0, 0, 0, 0), "cm")
+      panel.grid = ggplot2::element_blank(),
+      panel.border = ggplot2::element_rect(color = "black", fill = NA, linewidth = 0.5),
+      plot.margin = grid::unit(c(0, 0, 0, 0), "cm")
     ) +
-    labs(x = paste("PC", PC_a), y = paste("PC", PC_b))
-
-  return(p)
+    ggplot2::labs(x = paste("PC", PC_a), y = paste("PC", PC_b))
 }
 
 #' Diagnostic PCA Scatter Plots for All Principal Component Pairs
@@ -310,19 +338,28 @@ pca_diagnostic_convexhull <- function(pca, new_features, PC_a, PC_b) {
 #' @param plot_type A string specifying the type of plot: `"target"`, `"density"`, or `"convexhull"`.
 #' @param num_ellipses An integer specifying the number of ellipses for the `"target"` plot type (default: 3).
 #' @param num_bins An integer specifying the number of bins for the `"density"` plot type (default: 3).
-#' @param output_path A filepath to save the plot to.
+#' @param output_path A file path to save the plot to.
 #'
 #' @return A combined ggplot2 object displaying all pairwise PCA scatter plots in a grid format.
 #'
-#' @import ggplot2
-#' @importFrom cowplot ggdraw draw_plot draw_label plot_grid
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' cdas <- load_images(cropped)
+#' diagnostic_pca("ensemble", cdas, num_pcs = 3, plot_type = "convexhull")
 #' @export
-diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_ellipses=3, num_bins= 3, output_path = NULL) {
+diagnostic_pca <- function(
+    model = "ensemble",
+    your_data,
+    num_pcs,
+    plot_type,
+    num_ellipses = 3,
+    num_bins = 3,
+    output_path = NULL) {
   check_valid_package_data(model, pca = TRUE)
   check_valid_data(your_data, images = TRUE, filenames = FALSE)
 
-  if (!is.null(output_path) ) {
+  if (!is.null(output_path)) {
     if (!is.character(output_path)) {
       stop("Error: 'output_path' must be a character string")
     }
@@ -334,7 +371,13 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
 
   # Input checks
   if (!is.numeric(num_pcs) || num_pcs <= 1 || num_pcs > ncol(pca$features_pca)) {
-    stop(paste0("Error: 'num_pcs' must be a numeric value greater than 1 and less than or equal to the number of available principal components: ", ncol(pca$features_pca)))
+    stop(
+      paste0(
+        "Error: 'num_pcs' must be a numeric value greater than 1 and less than or equal to ",
+        "the number of available principal components: ",
+        ncol(pca$features_pca)
+      )
+    )
   }
   if (!is.character(plot_type) || !plot_type %in% c("target", "density", "convexhull")) {
     stop("Error: 'plot_type' must be one of 'target', 'density', or 'convexhull'.")
@@ -357,7 +400,7 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
   generate_pc_combinations <- function(num_pcs) {
     combinations <- expand.grid(PC_a = seq_len(num_pcs), PC_b = seq_len(num_pcs))
     combinations <- combinations[combinations$PC_a < combinations$PC_b, ]
-    return(combinations)
+    combinations
   }
 
   # Generate grid
@@ -369,11 +412,11 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
     PC_b <- plot_combinations[i, "PC_b"]
 
     if (plot_type == "target") {
-      return(pca_diagnostic_target(pca, new_features, PC_a, PC_b, num_ellipses))
+      pca_diagnostic_target(pca, new_features, PC_a, PC_b, num_ellipses)
     } else if (plot_type == "density") {
-      return(pca_diagnostic_density(pca, new_features, PC_a, PC_b, num_bins))
+      pca_diagnostic_density(pca, new_features, PC_a, PC_b, num_bins)
     } else if (plot_type == "convexhull") {
-      return(pca_diagnostic_convexhull(pca, new_features, PC_a, PC_b))
+      pca_diagnostic_convexhull(pca, new_features, PC_a, PC_b)
     }
   })
 
@@ -391,25 +434,33 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
       # Insert the explained variance circle in mirrored position
       total_variance <- explained_variance[pc_a] + explained_variance[pc_b]
 
-      circle_plot <- ggplot(data.frame(x = 1, y = 1, size = total_variance, label = paste0(round(total_variance * 100, 1), "%"))) +
-        geom_point(aes(x = .data$x, y = .data$y, size = .data$size), shape = 21, fill = "blue", color = "black") +
-        scale_size_continuous(
+      circle_plot <- ggplot2::ggplot(
+        data.frame(x = 1, y = 1, size = total_variance, label = paste0(round(total_variance * 100, 1), "%"))
+      ) +
+        ggplot2::geom_point(
+          ggplot2::aes(x = .data$x, y = .data$y, size = .data$size),
+          shape = 21,
+          fill = "blue",
+          color = "black"
+        ) +
+        ggplot2::scale_size_continuous(
           range = c(1, 20),
           limits = c(0, 1)
         ) +
-        geom_text(
-          aes(x = .data$x, y = .data$y + 0.75, label = .data$label),
+        ggplot2::geom_text(
+          ggplot2::aes(x = .data$x, y = .data$y + 0.75, label = .data$label),
           size = 4,
           color = "black"
         ) +
-        theme_void() + theme(legend.position = "none") +
-        coord_cartesian(clip = "off") +
-        ylim(0, 1.75)
+        ggplot2::theme_void() +
+        ggplot2::theme(legend.position = "none") +
+        ggplot2::coord_cartesian(clip = "off") +
+        ggplot2::ylim(0, 1.75)
 
       full_grid[[pc_b, pc_a]] <- circle_plot
     }
 
-    return(full_grid)
+    full_grid
   }
 
   full_plot_grid <- create_full_plot_grid(plot_list, plot_combinations, num_pcs, pca$explained_variance)
@@ -421,8 +472,8 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
         plotlist = as.list(full_plot_grid[, num_pcs:1]),
         ncol = num_pcs,
         nrow = num_pcs,
-        align = 'none',
-        axis = 'tblr'
+        align = "none",
+        axis = "tblr"
       ),
       x = 0.05,
       y = 0.06,
@@ -473,53 +524,53 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
   # Add legend
   create_conditional_legend <- function(plot_type) {
     if (plot_type == "convexhull") {
-      legend_plot <- ggplot() +
-        geom_point(
-          aes(x = 1, y = 0.5, color = "Training images"),
+      legend_plot <- ggplot2::ggplot() +
+        ggplot2::geom_point(
+          ggplot2::aes(x = 1, y = 0.5, color = "Training images"),
           size = 3, alpha = 0
         ) +
-        geom_point(
-          aes(x = 2, y = 0.5, color = "Your images, inside the hull"),
+        ggplot2::geom_point(
+          ggplot2::aes(x = 2, y = 0.5, color = "Your images, inside the hull"),
           size = 3, alpha = 0
         ) +
-        geom_point(
-          aes(x = 3, y = 0.5, color = "Your images"),
+        ggplot2::geom_point(
+          ggplot2::aes(x = 3, y = 0.5, color = "Your images"),
           size = 3, alpha = 0
         ) +
-        scale_color_manual(
+        ggplot2::scale_color_manual(
           values = c("Training images" = "grey", "Your images, inside the hull" = "blue", "Your images" = "red")
         ) +
-        theme_void() +
-        theme(
+        ggplot2::theme_void() +
+        ggplot2::theme(
           legend.position = "bottom",
-          legend.title = element_blank()
+          legend.title = ggplot2::element_blank()
         ) +
-        guides(
-          color = guide_legend(override.aes = list(size = 5, alpha = 1), nrow = 1)
+        ggplot2::guides(
+          color = ggplot2::guide_legend(override.aes = list(size = 5, alpha = 1), nrow = 1)
         )
     } else {
-      legend_plot <- ggplot() +
-        geom_point(
-          aes(x = 1, y = 0.5, color = "Training images"),
+      legend_plot <- ggplot2::ggplot() +
+        ggplot2::geom_point(
+          ggplot2::aes(x = 1, y = 0.5, color = "Training images"),
           size = 3, alpha = 0
         ) +
-        geom_point(
-          aes(x = 2, y = 0.5, color = "Your images"),
+        ggplot2::geom_point(
+          ggplot2::aes(x = 2, y = 0.5, color = "Your images"),
           size = 3, alpha = 0
         ) +
-        scale_color_manual(
+        ggplot2::scale_color_manual(
           values = c("Training images" = "grey", "Your images" = "red")
         ) +
-        theme_void() +
-        theme(
+        ggplot2::theme_void() +
+        ggplot2::theme(
           legend.position = "bottom",
-          legend.title = element_blank()
+          legend.title = ggplot2::element_blank()
         ) +
-        guides(
-          color = guide_legend(override.aes = list(size = 5, alpha = 1), nrow = 1)
+        ggplot2::guides(
+          color = ggplot2::guide_legend(override.aes = list(size = 5, alpha = 1), nrow = 1)
         )
     }
-    return(legend_plot)
+    legend_plot
   }
 
   # Assuming 'combined_plot' is your main plot object and 'plot_type' is a variable
@@ -534,9 +585,9 @@ diagnostic_pca <- function(model="ensemble", your_data, num_pcs, plot_type, num_
       height = 0.05
     )
 
-  if (!is.null(output_path) ) {
-    ggsave(output_path, combined_plot, width = 6, height = 5, dpi = 300)
+  if (!is.null(output_path)) {
+    ggplot2::ggsave(output_path, combined_plot, width = 6, height = 5, dpi = 300)
   }
 
-  return(combined_plot)
+  combined_plot
 }

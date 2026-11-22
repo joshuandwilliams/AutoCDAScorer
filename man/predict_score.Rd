@@ -9,7 +9,8 @@ predict_score(model, data, output_path = NULL, softmax = FALSE)
 \arguments{
 \item{model}{A string corresponding to a specific Keras model.}
 
-\item{data}{A data list containing a 4D array of images (height, width, channels, num_images).}
+\item{data}{A data list containing a 4D array of images (images, height, width, channels), as returned by
+\code{\link[=load_images]{load_images()}} or \code{\link[=crop_and_load_images]{crop_and_load_images()}}.}
 
 \item{output_path}{The file path where the CSV file should be saved.}
 
@@ -20,5 +21,13 @@ An object containing either the raw softmax values (matrix) or the predicted sco
 }
 \description{
 This function returns either the raw softmax probabilities or the predicted score for a set of images.
-Optionally this function can save the predicted annotations to a csv file.
+Optionally this function can save the predicted scores to a CSV file.
+}
+\examples{
+\dontrun{
+# Needs a Keras 3.15.0+ backend; see check_and_install_tensorflow()
+cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+cdas <- load_images(cropped)
+predict_score("ensemble", cdas)
+}
 }
