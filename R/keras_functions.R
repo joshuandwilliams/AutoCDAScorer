@@ -12,6 +12,11 @@ KERAS_MINIMUM <- numeric_version("3.15.0")
 #'
 #' @return Invisibly returns TRUE if a new enough backend is available, FALSE otherwise.
 #'
+#' @examples
+#' \dontrun{
+#' # Installs Python, TensorFlow and Keras if they are missing
+#' check_and_install_tensorflow()
+#' }
 #' @export
 check_and_install_tensorflow <- function() {
   # First try to load the keras3 package
@@ -109,6 +114,13 @@ load_cda_model <- function(model_file) {
 #' @return An object containing either the raw softmax values (matrix) or the predicted scores (vector).
 #'
 #'
+#' @examples
+#' \dontrun{
+#' # Needs a Keras 3.15.0+ backend; see check_and_install_tensorflow()
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' cdas <- load_images(cropped)
+#' predict_score("ensemble", cdas)
+#' }
 #' @export
 predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
   model_files <- check_valid_package_data(name = model, pca = FALSE)

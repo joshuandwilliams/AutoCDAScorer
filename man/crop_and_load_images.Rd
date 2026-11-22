@@ -26,3 +26,13 @@ A list containing:
 This function takes a path to a CDAScorer dataframe and crops images based on the coordinates in the dataframe.
 The cropped images are loaded into memory, and optionally saved to an output directory.
 }
+\examples{
+# The example CSV names its source image without a folder, so add the folder
+example_dir <- system.file("extdata", "example_dataset", package = "AutoCDAScorer")
+boxes <- utils::read.csv(file.path(example_dir, "cdascorer_example.csv"))
+boxes$img <- file.path(example_dir, "raw_images", boxes$img)
+csv <- tempfile(fileext = ".csv")
+utils::write.csv(boxes, csv, row.names = FALSE)
+cdas <- crop_and_load_images(csv)
+dim(cdas$images)
+}

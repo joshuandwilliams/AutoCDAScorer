@@ -21,3 +21,8 @@ A list containing:
 \description{
 Loads all \code{.tif} images from the given directory and immediate subdirectories.
 }
+\examples{
+cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+cdas <- load_images(cropped)
+dim(cdas$images)
+}

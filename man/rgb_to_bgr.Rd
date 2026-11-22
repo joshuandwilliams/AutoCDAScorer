@@ -15,3 +15,7 @@ A dataset whose images have the same structure, but the color channels reordered
 \description{
 This function takes a converts a 4D image array from RGB to BGR by reordering the color channels.
 }
+\examples{
+cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+bgr <- rgb_to_bgr(load_images(cropped))
+}

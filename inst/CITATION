@@ -1,0 +1,8 @@
+bibentry(
+  bibtype = "Manual",
+  title = "{AutoCDAScorer}: Automatically Score Cell Death Areas on {Nicotiana benthamiana} Leaves",
+  author = person("Joshua", "Williams"),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/joshuandwilliams/AutoCDAScorer"
+)

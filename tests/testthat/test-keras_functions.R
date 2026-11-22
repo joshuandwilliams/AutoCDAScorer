@@ -1,4 +1,5 @@
 test_that("load_cda_model valid file", {
+  skip_if_no_keras()
   expect_no_error(load_cda_model("geom_cnn_6848.keras"))
 
   # Invalid names tested in check_valid_package_data()
@@ -12,6 +13,7 @@ test_that("load_cda_model invalid model", {
 })
 
 test_that("predict_score valid inputs", {
+  skip_if_no_keras()
   data <- list(
     images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)),
     filenames = paste0("image_", seq_len(5), ".jpg") # Ensure filenames are included for CSV output
@@ -69,6 +71,7 @@ test_that("predict_score invalid inputs", {
 })
 
 test_that("predict_score rgb to bgr", {
+  skip_if_no_keras()
   data <- list(
     images = array(stats::runif(5 * 64 * 64 * 3), dim = c(5, 64, 64, 3)),
     filenames = paste0("image_", seq_len(5), ".jpg") # Ensure filenames are included for CSV output
@@ -81,6 +84,7 @@ test_that("predict_score rgb to bgr", {
 })
 
 test_that("predict_score reproduces the published test-split accuracies", {
+  skip_if_no_keras()
   # The whole point of the package, so it is checked end to end rather than by parts:
   # crops off disk, through the loader, into each model. Targets are the chapter's.
   crops <- system.file("extdata", "example_dataset", "cropped_images",

@@ -97,6 +97,15 @@ load_cdascorer_dataframe <- function(path) {
 #' - `filenames`: a character vector of filenames for the cropped images.
 #'
 #'
+#' @examples
+#' # The example CSV names its source image without a folder, so add the folder
+#' example_dir <- system.file("extdata", "example_dataset", package = "AutoCDAScorer")
+#' boxes <- utils::read.csv(file.path(example_dir, "cdascorer_example.csv"))
+#' boxes$img <- file.path(example_dir, "raw_images", boxes$img)
+#' csv <- tempfile(fileext = ".csv")
+#' utils::write.csv(boxes, csv, row.names = FALSE)
+#' cdas <- crop_and_load_images(csv)
+#' dim(cdas$images)
 #' @export
 crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL) {
   if (is.numeric(image_size)) {
@@ -191,6 +200,10 @@ crop_and_load_images <- function(input_path, image_size = 64, output_path = NULL
 #'   \item{filenames}{A vector of image file names}
 #'
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' cdas <- load_images(cropped)
+#' dim(cdas$images)
 #' @export
 load_images <- function(input_path, image_size = 64) {
   if (!is.character(input_path)) {
@@ -292,6 +305,9 @@ load_images <- function(input_path, image_size = 64) {
 #' @return A visual output of the first image in the dataset.
 #'
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' show_test_image(load_images(cropped))
 #' @export
 show_test_image <- function(data) {
   check_valid_data(data, images = TRUE, filenames = FALSE)
@@ -309,6 +325,9 @@ show_test_image <- function(data) {
 #'
 #' @return A dataset whose images have the same structure, but the color channels reordered to BGR.
 #'
+#' @examples
+#' cropped <- system.file("extdata", "example_dataset", "cropped_images", package = "AutoCDAScorer")
+#' bgr <- rgb_to_bgr(load_images(cropped))
 #' @export
 rgb_to_bgr <- function(data) {
   check_valid_data(data, images = TRUE, filenames = FALSE)

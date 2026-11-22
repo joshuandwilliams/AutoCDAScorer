@@ -18,3 +18,9 @@ and required dependencies using keras3::install_keras().
 The packaged models were saved by Keras 3.15.0, so the version is checked as
 well as the presence: an older backend cannot deserialise them.
 }
+\examples{
+\dontrun{
+# Installs Python, TensorFlow and Keras if they are missing
+check_and_install_tensorflow()
+}
+}
