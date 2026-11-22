@@ -19,16 +19,7 @@ KERAS_MINIMUM <- numeric_version("3.15.0")
 #' }
 #' @export
 check_and_install_tensorflow <- function() {
-  # First try to load the keras3 package
-  if (!requireNamespace("keras3", quietly = TRUE)) {
-    print("The keras3 package is not installed. Please install it with: install.packages('keras3')")
-    return(invisible(FALSE))
-  }
-
-  # Reading the version both reaches the backend and reports what it is
-  version <- tryCatch(numeric_version(keras3::keras$`__version__`),
-    error = function(e) NULL
-  )
+  version <- keras_version()
 
   if (!is.null(version)) {
     if (version >= KERAS_MINIMUM) {
@@ -44,7 +35,7 @@ check_and_install_tensorflow <- function() {
   }
 
   print("TensorFlow backend is not installed. It is required to run model functions in AutoCDAScorer.")
-  user_input <- readline(prompt = "Would you like to install TensorFlow now? [Yes/No]: ")
+  user_input <- ask_user("Would you like to install TensorFlow now? [Yes/No]: ")
 
   if (tolower(user_input) %in% c("yes", "y")) {
     print("Installing TensorFlow and dependencies using keras3::install_keras()...")
@@ -55,11 +46,9 @@ check_and_install_tensorflow <- function() {
         keras3::use_backend("tensorflow")
 
         # Check again if keras can be initialized
-        success2 <- tryCatch(numeric_version(keras3::keras$`__version__`) >= KERAS_MINIMUM,
-          error = function(e) FALSE
-        )
+        installed <- keras_version()
 
-        if (success2) {
+        if (!is.null(installed) && installed >= KERAS_MINIMUM) {
           print("TensorFlow installation successful.")
           return(invisible(TRUE))
         } else {
@@ -79,6 +68,27 @@ check_and_install_tensorflow <- function() {
     print("TensorFlow installation skipped. Model functions will not work until TensorFlow is installed.")
     invisible(FALSE)
   }
+}
+
+#' Version of the Keras backend
+#'
+#' Reading the version both reaches the Python backend and reports what it is.
+#'
+#' @return A `numeric_version`, or `NULL` if no backend can be reached.
+#' @noRd
+keras_version <- function() {
+  tryCatch(numeric_version(keras3::keras$`__version__`), error = function(e) NULL)
+}
+
+#' Ask the user a question at the console
+#'
+#' A wrapper around [readline()], so tests can supply the answer.
+#'
+#' @param prompt The question to show.
+#' @return The user's answer as a string. Outside an interactive session this is `""`.
+#' @noRd
+ask_user <- function(prompt) {
+  readline(prompt = prompt)
 }
 
 #' Load CDAScorer Keras Model

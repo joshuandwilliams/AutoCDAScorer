@@ -4,7 +4,7 @@
 # cannot be reached.
 skip_if_no_keras <- function() {
   testthat::skip_on_cran()
-  version <- tryCatch(numeric_version(keras3::keras$`__version__`), error = function(e) NULL)
+  version <- keras_version()
   if (is.null(version) || version < KERAS_MINIMUM) {
     testthat::skip("No Keras 3.15.0+ backend available")
   }
