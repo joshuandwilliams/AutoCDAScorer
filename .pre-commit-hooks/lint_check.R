@@ -1,7 +1,5 @@
 #!/usr/bin/env Rscript
-# Lints the given R/Rmd files with lintr (using .lintr config). Reports and does not
-# fail: the package predates the linter and carries a backlog of style lints. Change
-# the final line to `quit(status = 1)` once that backlog is cleared.
+# Lints the given R/Rmd files with lintr (using .lintr config) and fails on any lint.
 args <- commandArgs(trailingOnly = TRUE)
 n <- 0L
 for (path in args) {
@@ -11,5 +9,7 @@ for (path in args) {
     n <- n + length(lints)
   }
 }
-if (n > 0) message(sprintf("lintr: %d lint(s), not blocking the commit", n))
-quit(status = 0)
+if (n > 0) {
+  message(sprintf("lintr: %d lint(s)", n))
+  quit(status = 1)
+}

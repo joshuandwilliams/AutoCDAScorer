@@ -9,7 +9,8 @@ load_images(input_path, image_size = 64)
 \arguments{
 \item{input_path}{A string specifying the directory containing images.}
 
-\item{image_size}{An integer specifying the size to which each image should be resized (width, height). Default is 64.}
+\item{image_size}{An integer specifying the size to which each image should be resized (width, height). Default is
+64.}
 }
 \value{
 A list containing:

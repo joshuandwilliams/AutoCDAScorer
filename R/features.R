@@ -76,7 +76,6 @@ FEATURE_NAMES <- c(
 #' @return A named numeric vector of length 13: the twelve model features, plus
 #'   `frac_g_gt_r`, which is a baseline predictor rather than a model input.
 #'
-#' @importFrom stats sd
 #'
 #' @keywords internal
 #' @noRd
@@ -124,7 +123,6 @@ cda_features <- function(img) {
 #'
 #' @return A numeric matrix of class probabilities, one row per crop, columns p0 to p6.
 #'
-#' @importFrom stats plogis
 #'
 #' @keywords internal
 #' @noRd

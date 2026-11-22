@@ -22,11 +22,13 @@ check_valid_package_data <- function(name, pca = FALSE) {
   # The 16 geometric-augmentation CNNs whose cross-validation accuracy ties within one
   # standard error of the best. 6848 tops the held-out ensemble split, so it is also the
   # single-model option.
-  geom_cnn <- paste0("geom_cnn_", c(2473, 3549, 3553, 5658, 5712, 5768, 6789, 6794, 6829,
-                                    6843, 6848, 7855, 7873, 7908, 7923, 7927), ".keras")
+  geom_cnn <- paste0("geom_cnn_", c(
+    2473, 3549, 3553, 5658, 5712, 5768, 6789, 6794, 6829,
+    6843, 6848, 7855, 7873, 7908, 7923, 7927
+  ), ".keras")
 
   if (pca == FALSE) {
-    type = "model"
+    type <- "model"
     lookup <- list(
       ordinal = "ordinal_regression.rds",
       geom_cnn = "geom_cnn_6848.keras",
@@ -34,7 +36,7 @@ check_valid_package_data <- function(name, pca = FALSE) {
       # Add more models here
     )
   } else {
-    type = "pca"
+    type <- "pca"
     # Each model is paired with the crops it was trained on: medoid_64 train+val for the
     # ordinal regression, the augmented pool for the CNNs. The ensemble takes the CNNs'
     # pool, which is the wider of the two.
@@ -55,11 +57,13 @@ check_valid_package_data <- function(name, pca = FALSE) {
 
 #' Check for Valid Data List
 #'
-#' This function validates the structure of a data list, checking for the presence and correct format of 'images', 'filenames' and/or 'crops' elements.
+#' This function validates the structure of a data list, checking for the presence and correct format of 'images',
+#' 'filenames' and/or 'crops' elements.
 #'
 #' @param data A list containing the data to be validated.
 #' @param images A logical indicating whether to check for an 'images' element (TRUE) or not (FALSE). Defaults to TRUE.
-#' @param filenames A logical indicating whether to check for a 'filenames' element (TRUE) or not (FALSE). Defaults to FALSE.
+#' @param filenames A logical indicating whether to check for a 'filenames' element (TRUE) or not (FALSE). Defaults to
+#'   FALSE.
 #' @param crops A logical indicating whether to check for a 'crops' element (TRUE) or not (FALSE). Defaults to FALSE.
 #'
 #' @keywords internal
@@ -108,14 +112,22 @@ check_valid_data <- function(data, images = TRUE, filenames = FALSE, crops = FAL
 #' This function validates the structure of a PCA object, checking for the presence of specified elements.
 #'
 #' @param pca A list representing the PCA object to be validated.
-#' @param features_pca A logical indicating whether to check for a 'features_pca' element (TRUE) or not (FALSE). Defaults to TRUE.
-#' @param explained_variance A logical indicating whether to check for an 'explained_variance' element (TRUE) or not (FALSE). Defaults to FALSE.
-#' @param principal_components A logical indicating whether to check for a 'principal_components' element (TRUE) or not (FALSE). Defaults to FALSE.
+#' @param features_pca A logical indicating whether to check for a 'features_pca' element (TRUE) or not (FALSE).
+#'   Defaults to TRUE.
+#' @param explained_variance A logical indicating whether to check for an 'explained_variance' element (TRUE) or not
+#'   (FALSE). Defaults to FALSE.
+#' @param principal_components A logical indicating whether to check for a 'principal_components' element (TRUE) or not
+#'   (FALSE). Defaults to FALSE.
 #' @param center A logical indicating whether to check for a 'center' element (TRUE) or not (FALSE). Defaults to FALSE.
 #'
 #' @keywords internal
 #' @noRd
-check_valid_pca <- function(pca, features_pca = TRUE, explained_variance = FALSE, principal_components = FALSE, center = FALSE) {
+check_valid_pca <- function(
+    pca,
+    features_pca = TRUE,
+    explained_variance = FALSE,
+    principal_components = FALSE,
+    center = FALSE) {
   if (!is.list(pca)) {
     stop("Error: 'pca' must be a list")
   }
