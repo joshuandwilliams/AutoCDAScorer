@@ -1,7 +1,6 @@
 # The package is pure R, so only the R hooks from AutoCDAScorer_Models are used here.
-# styler formats the files being committed; lintr reports without blocking, because the
-# package predates the linter (see .pre-commit-hooks/lint_check.R).
-exclude: ^(man/|inst/extdata/|dev/)
+# styler formats the files being committed. lintr fails the commit on any lint.
+exclude: ^(man/|inst/extdata/)
 
 repos:
   - repo: local

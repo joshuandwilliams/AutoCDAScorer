@@ -11,7 +11,7 @@ valid_cdascorer_df <- function() {
 test_that("load_cdascorer_dataframe valid input", {
   temp_file <- tempfile(fileext = ".csv")
   df <- valid_cdascorer_df()
-  write.csv(df, temp_file, row.names = FALSE)
+  utils::write.csv(df, temp_file, row.names = FALSE)
 
   df <- load_cdascorer_dataframe(temp_file)
   expect_true(all(c("img", "x1", "x2", "y1", "y2") %in% colnames(df))) # Correct columns
@@ -28,8 +28,11 @@ test_that("load_cdascorer_dataframe incorrect columns", {
   temp_file <- tempfile(fileext = ".csv")
   df <- valid_cdascorer_df()
   df <- valid_cdascorer_df() %>% dplyr::select(-x1)
-  write.csv(df, temp_file, row.names = FALSE)
-  expect_error(load_cdascorer_dataframe(temp_file), "Error: cdascorer input CSV must contain the following columns: img, x1, x2, y1, y2")
+  utils::write.csv(df, temp_file, row.names = FALSE)
+  expect_error(
+    load_cdascorer_dataframe(temp_file),
+    "Error: cdascorer input CSV must contain the following columns: img, x1, x2, y1, y2"
+  )
 
   unlink(temp_file)
 })
@@ -42,7 +45,7 @@ create_mock_image_data <- function(temp_dir, image_names = c("image1.png", "imag
     png::writePNG(image, image_path)
   }
 
-  return(image_paths)
+  image_paths
 }
 
 test_that("crop_and_load_images valid inputs", {
@@ -52,7 +55,7 @@ test_that("crop_and_load_images valid inputs", {
   temp_file <- tempfile(fileext = ".csv") # Input cdascorer csv
   df <- valid_cdascorer_df()
   df$img <- image_paths # df needs 'img' to match the real paths
-  write.csv(df, temp_file, row.names = FALSE)
+  utils::write.csv(df, temp_file, row.names = FALSE)
   # load_cdascorer_dataframe() checks valid df
 
   image_size <- 64
@@ -69,9 +72,9 @@ test_that("crop_and_load_images valid inputs", {
   expect_equal(dim(result$images)[4], 3)
 
   # Check saved images exist
-  expect_true(dir_exists(output_path))
-  expect_true(file_exists(file.path(output_path, "image1_1.tif")))
-  expect_true(file_exists(file.path(output_path, "image2_2.tif")))
+  expect_true(fs::dir_exists(output_path))
+  expect_true(fs::file_exists(file.path(output_path, "image1_1.tif")))
+  expect_true(fs::file_exists(file.path(output_path, "image2_2.tif")))
 
   unlink(temp_file)
   unlink(image_paths)
@@ -90,14 +93,14 @@ test_that("crop_and_load_images invalid coordinates", {
   temp_path_img <- file.path(temp_dir, "image1.png")
   temp_path_csv <- file.path(temp_dir, "cdascorer.csv")
   # Small dummy test image (30x30)
-  image1 <- array(stats::runif(30*30*3), dim=c(30,30,3))
+  image1 <- array(stats::runif(30 * 30 * 3), dim = c(30, 30, 3))
   png::writePNG(image1, temp_path_img)
   cdascorer <- data.frame(
     img = c(temp_path_img),
     x1 = c(10), x2 = c(50),
     y1 = c(5), y2 = c(40)
   ) # x2 and y2 are out of bounds
-  write.csv(cdascorer, temp_path_csv, row.names = FALSE)
+  utils::write.csv(cdascorer, temp_path_csv, row.names = FALSE)
   expect_error(crop_and_load_images(temp_path_csv, image_size = 64))
   unlink(temp_path_img)
   unlink(temp_path_csv)
@@ -117,14 +120,14 @@ create_mock_image_dir <- function() {
     file.path(data_dir, "0", "image2.TIF"),
     file.path(data_dir, "1", "image3.tif"),
     file.path(data_dir, "1", "image4.tif"),
-    file.path(data_dir, "image5.tif"),  # In base data_dir
-    file.path(data_dir, "image6.TIF")   # In base data_dir
+    file.path(data_dir, "image5.tif"), # In base data_dir
+    file.path(data_dir, "image6.TIF") # In base data_dir
   )
 
   # Create empty files
   fs::file_create(tif_files)
 
-  return(list(data_dir = data_dir, tif_files = tif_files))
+  list(data_dir = data_dir, tif_files = tif_files)
 }
 
 test_that("load_images valid inputs", {
@@ -134,10 +137,12 @@ test_that("load_images valid inputs", {
 
   # Mocks and stubs
   mock_imread <- mockery::mock(
-    magick::image_blank(width = 100, height = 100, color = "white"), cycle = TRUE
+    magick::image_blank(width = 100, height = 100, color = "white"),
+    cycle = TRUE
   )
   mock_resize <- mockery::mock(
-    magick::image_blank(width = 64, height = 64, color = "white"), cycle = TRUE
+    magick::image_blank(width = 64, height = 64, color = "white"),
+    cycle = TRUE
   )
   mockery::stub(load_images, "magick::image_read", mock_imread)
   mockery::stub(load_images, "magick::image_resize", mock_resize)
@@ -146,7 +151,7 @@ test_that("load_images valid inputs", {
   result <- load_images(data_dir, 64)
 
   expect_equal(length(dim(result$images)), 4) # n_dims
-  expect_equal(dim(result$images)[1], 6)  # n_images
+  expect_equal(dim(result$images)[1], 6) # n_images
   expect_equal(length(result$filenames), 6) # n_filepaths
   expect_equal(dim(result$images)[2:4], c(64, 64, 3)) # Image dimensions
 
@@ -213,7 +218,7 @@ test_that("load_images single non-square image", {
   result <- load_images(data_dir, 64)
 
   expect_equal(length(dim(result$images)), 4) # n_dims
-  expect_equal(dim(result$images)[1], 1)    # n_images
+  expect_equal(dim(result$images)[1], 1) # n_images
   expect_equal(length(result$filenames), 1) # n_filepaths
   expect_equal(dim(result$images)[2:4], c(64, 64, 3)) # Expect to be resized to 64x64
 
