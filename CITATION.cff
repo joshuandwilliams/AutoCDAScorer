@@ -8,6 +8,7 @@ authors:
     given-names: Joshua
     email: joshuandwilliams@outlook.com
 license: MIT
+doi: 10.5281/zenodo.24478716
 repository-code: "https://github.com/joshuandwilliams/AutoCDAScorer"
 keywords:
   - agroinfiltration

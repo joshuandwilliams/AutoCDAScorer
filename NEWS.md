@@ -1,3 +1,5 @@
+# AutoCDAScorer (development version)
+
 # AutoCDAScorer 0.1.0
 
 * The 16 CNN models behind `"geom_cnn"` and `"ensemble"` are no longer included
