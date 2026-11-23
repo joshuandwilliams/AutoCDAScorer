@@ -14,5 +14,5 @@ caller, once, rather than here, since the ensemble loads sixteen of these.}
 A Keras model object
 }
 \description{
-This function loads a pre-trained Keras model from the \code{extdata} directory of the \code{AutoCDAScorer} package.
+Loads one of the pre-trained Keras models downloaded by \code{\link[=download_models]{download_models()}}.
 }

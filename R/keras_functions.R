@@ -93,7 +93,7 @@ ask_user <- function(prompt) {
 
 #' Load CDAScorer Keras Model
 #'
-#' This function loads a pre-trained Keras model from the `extdata` directory of the `AutoCDAScorer` package.
+#' Loads one of the pre-trained Keras models downloaded by [download_models()].
 #'
 #' @param model_file A string naming the file to load. The backend is checked by the
 #'   caller, once, rather than here, since the ensemble loads sixteen of these.
@@ -101,8 +101,7 @@ ask_user <- function(prompt) {
 #' @return A Keras model object
 #'
 load_cda_model <- function(model_file) {
-  path <- system.file("extdata", model_file, package = "AutoCDAScorer")
-  model <- keras3::load_model(path)
+  model <- keras3::load_model(file.path(models_dir(), model_file))
 
   if (!inherits(model, c("keras.models.models.model.Model", "keras.src.models.model.Model"))) {
     stop("Error: Loaded model is not a valid Keras model")
@@ -167,6 +166,7 @@ predict_score <- function(model, data, output_path = NULL, softmax = FALSE) {
     if (!check_and_install_tensorflow()) {
       stop("Error: No usable Keras backend, so the model cannot be loaded")
     }
+    ensure_models()
     p <- lapply(keras_files, function(f) load_cda_model(f)$predict(images, verbose = 0L))
     parts$networks <- Reduce(`+`, p) / length(p)
   }

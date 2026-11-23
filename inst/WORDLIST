@@ -1,5 +1,6 @@
 Agroinfiltration
 AutoCDAScorer's
+AutoCDAScorer’s
 BGR
 CDA
 CDALabeller
@@ -7,6 +8,7 @@ CDAScorer
 CDAs
 CMD
 CNNs
+CRAN's
 Codecov
 EBImage
 Keras
@@ -14,8 +16,6 @@ Nicotiana
 TensorFlow
 agroinfiltration
 benthamiana
-cnn
-codecov
 deserialise
 ggplot
 img

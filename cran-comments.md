@@ -6,19 +6,19 @@ This is a new submission. It has not been submitted yet: the version is still
 ## R CMD check results
 
 Local, macOS 26.6.1, R 4.4.2, `R CMD check --as-cran`: 0 errors, 0 warnings,
-4 notes.
+3 notes.
 
 * New submission. Version contains large components (0.0.0.9000).
   Expected for an unreleased development version.
-* Installed size is 9.9 MB, of which inst/extdata is 8.9 MB. These are the 16
-  CNN models, the ordinal regression model, the PCA reference data and the
-  example images. Still to be resolved before submission.
 * Problems with news in 'NEWS.md': No news entries found. The top heading is
   "(development version)", which R does not parse as a version.
 * Unable to verify current time. A local network issue, not from the package.
 
-The Keras tests, and the scoring step of the vignette, need a Python Keras
-3.15.0+ backend. They are skipped on CRAN and run in CI (NOT_CRAN=true).
+The CNN models are not in the package. Users download them from Hugging Face
+with download_models(), into tools::R_user_dir("AutoCDAScorer", "cache"). The
+Keras tests, and the scoring step of the vignette, need a Python Keras 3.15.0+
+backend and that download. They are skipped on CRAN and run in CI
+(NOT_CRAN=true).
 
 ## Test environments
 

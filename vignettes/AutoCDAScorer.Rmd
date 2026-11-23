@@ -9,12 +9,13 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(collapse = FALSE, comment = "#>")
-# Scoring needs the Python Keras backend. CRAN does not have it, so the scoring
-# step only runs where NOT_CRAN is set and Keras 3.15.0 or later can be reached.
+# Scoring with the CNNs needs the Python Keras backend and the models downloaded
+# from Hugging Face. CRAN has neither, so that step only runs where NOT_CRAN is
+# set, Keras 3.15.0 or later can be reached, and the download succeeds.
 has_keras <- identical(Sys.getenv("NOT_CRAN"), "true") && isTRUE(tryCatch(
   numeric_version(keras3::keras$`__version__`) >= "3.15.0",
   error = function(e) FALSE
-))
+)) && !is.null(tryCatch(suppressMessages(AutoCDAScorer::download_models()), error = function(e) NULL))
 ```
 
 This guide shows the three steps of scoring cell death areas (CDAs) with
@@ -128,5 +129,13 @@ your_scores <- predict_score("ensemble", your_dataset)
 table(your_scores)
 ```
 
-Scoring needs Python and Keras 3.15.0 or later. Run
-`check_and_install_tensorflow()` once to set them up.
+The `"ensemble"` and `"geom_cnn"` models use 16 convolutional neural networks
+(CNNs). These need Python and Keras 3.15.0 or later, and the CNNs themselves,
+which are downloaded from Hugging Face. Run each of these once:
+
+```{r, eval = FALSE}
+check_and_install_tensorflow()
+download_models()
+```
+
+The `"ordinal"` model needs neither, and neither do the diagnostic plots.
