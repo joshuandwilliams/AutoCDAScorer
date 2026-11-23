@@ -115,3 +115,6 @@ diagnostic plots.
 ``` r
 citation("AutoCDAScorer")
 ```
+
+If you used the CNN models, please also cite them. Their DOI is
+[10.57967/hf/11810](https://doi.org/10.57967/hf/11810).

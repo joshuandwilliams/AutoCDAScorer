@@ -13,3 +13,5 @@
   Python Keras backend are not run automatically.
 * Tests that need the Keras backend are skipped when it is not available.
 * The maintainer's email address is now joshuandwilliams@outlook.com.
+* `citation("AutoCDAScorer")` also gives the CNN models' DOI,
+  10.57967/hf/11810.

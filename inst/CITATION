@@ -1,3 +1,5 @@
+citHeader("To cite AutoCDAScorer, please cite the package. If you used the CNN models, please also cite the models.")
+
 bibentry(
   bibtype = "Manual",
   title = "{AutoCDAScorer}: Automatically Score Cell Death Areas in Agroinfiltration Images",
@@ -5,4 +7,15 @@ bibentry(
   year = "2026",
   note = paste("R package version", meta$Version),
   url = "https://github.com/joshuandwilliams/AutoCDAScorer"
+)
+
+bibentry(
+  bibtype = "Misc",
+  title = "{AutoCDAScorer}",
+  author = person("Joshua", "Williams"),
+  year = "2026",
+  howpublished = "Hugging Face",
+  note = "CNN models, revision 10784cf",
+  doi = "10.57967/hf/11810",
+  url = "https://huggingface.co/joshuandwilliams/AutoCDAScorer"
 )
