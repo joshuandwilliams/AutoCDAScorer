@@ -6,9 +6,10 @@
 #' @noRd
 MODEL_REPO <- "joshuandwilliams/AutoCDAScorer"
 
-#' Revision of that repository to download. A commit hash pins the exact files.
+#' Revision of that repository to download: the commit that uploaded the 16 models.
+#' A commit hash, unlike a branch, always refers to exactly these files.
 #' @noRd
-MODEL_REVISION <- "main"
+MODEL_REVISION <- "10784cf81be6778596c120e538e76966dfb7dcb6"
 
 #' The CNN model files and their MD5 checksums
 #'
