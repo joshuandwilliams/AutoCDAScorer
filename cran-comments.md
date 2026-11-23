@@ -1,18 +1,17 @@
 ## Submission
 
-This is a new submission. It has not been submitted yet: the version is still
-0.0.0.9000 and must be set to a release number first.
+This is a new submission.
 
 ## R CMD check results
 
 Local, macOS 26.6.1, R 4.4.2, `R CMD check --as-cran`: 0 errors, 0 warnings,
 3 notes.
 
-* New submission. Version contains large components (0.0.0.9000).
-  Expected for an unreleased development version.
-* Problems with news in 'NEWS.md': No news entries found. The top heading is
-  "(development version)", which R does not parse as a version.
+* New submission.
 * Unable to verify current time. A local network issue, not from the package.
+* HTML version of manual: "<main> is not recognized". The local HTML Tidy is
+  Apple's 2006 build, which predates HTML5. R-hub reported no notes on any
+  platform.
 
 The CNN models are not in the package. Users download them from Hugging Face
 with download_models(), into tools::R_user_dir("AutoCDAScorer", "cache"). The
@@ -24,4 +23,7 @@ backend and that download. They are skipped on CRAN and run in CI
 
 * GitHub Actions (R CMD check workflow): macOS, Windows and Ubuntu on R
   release; Ubuntu on R devel and R oldrel-1. All passed.
-* R-hub, win-builder and macOS builder: not run yet.
+* R-hub, R-devel on linux, windows, macos and macos-arm64 (run 2026-11-23):
+  Status OK on all four.
+* win-builder, R-devel and R-release: submitted 2026-11-23, results emailed to
+  the maintainer.
