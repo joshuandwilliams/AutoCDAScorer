@@ -3,6 +3,7 @@
 export(check_and_install_tensorflow)
 export(crop_and_load_images)
 export(diagnostic_pca)
+export(download_models)
 export(load_images)
 export(predict_score)
 export(rgb_to_bgr)

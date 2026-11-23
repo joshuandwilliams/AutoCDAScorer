@@ -41,15 +41,22 @@ pak::pak("joshuandwilliams/AutoCDAScorer")
 
 `pak` also installs EBImage, which comes from Bioconductor rather than CRAN.
 
-The models run in Python, through Keras 3.15.0 or later. Older versions of
-Keras cannot read them. To set up Python and Keras, run this once:
+The `"ordinal"` model and the diagnostic plots work straight away. The
+`"geom_cnn"` and `"ensemble"` models use 16 convolutional neural networks
+(CNNs), which run in Python through Keras 3.15.0 or later. They need two
+one-off steps. First set up Python and Keras:
 
 ```{r, eval = FALSE}
 AutoCDAScorer::check_and_install_tensorflow()
 ```
 
 If you already have a suitable Python environment, point R at it with
-`reticulate::use_condaenv()` instead.
+`reticulate::use_condaenv()` instead. Then download the CNNs, about 4.7 MB,
+from [Hugging Face](https://huggingface.co/joshuandwilliams/AutoCDAScorer):
+
+```{r, eval = FALSE}
+AutoCDAScorer::download_models()
+```
 
 ## Models
 
@@ -82,7 +89,7 @@ cdas <- crop_and_load_images("bounding_boxes.csv")
 # Check that the images resemble the training images
 diagnostic_pca("ensemble", cdas, num_pcs = 5, plot_type = "convexhull")
 
-# Score them
+# Score them. "ensemble" and "geom_cnn" need the downloaded CNNs; "ordinal" does not.
 predict_score("ensemble", cdas)
 ```
 
