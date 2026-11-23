@@ -12,3 +12,4 @@
 ^README\.html$
 ^\.claude$
 ^cran-comments\.md$
+^CITATION\.cff$
