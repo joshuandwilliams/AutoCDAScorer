@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "AutoCDAScorer: Automatically Score Cell Death Areas in Agroinfiltration Images"
+abstract: "Scores cell death areas (CDAs) in UV agroinfiltration images of Nicotiana benthamiana leaves. Deep learning and ordinal regression models give each CDA a cell death severity score from 0 (no cell death) to 6 (strong cell death). Diagnostic plots show whether new images resemble the training images."
+authors:
+  - family-names: Williams
+    given-names: Joshua
+    email: joshuandwilliams@outlook.com
+license: MIT
+repository-code: "https://github.com/joshuandwilliams/AutoCDAScorer"
+keywords:
+  - agroinfiltration
+  - cell death
+  - Nicotiana benthamiana
+  - deep learning
+  - R
