@@ -15,3 +15,16 @@ keywords:
   - Nicotiana benthamiana
   - deep learning
   - R
+references:
+  - type: generic
+    title: "AutoCDAScorer"
+    abstract: "The 16 CNN models that AutoCDAScorer downloads."
+    authors:
+      - family-names: Williams
+        given-names: Joshua
+    publisher:
+      name: Hugging Face
+    year: 2026
+    version: 10784cf
+    doi: 10.57967/hf/11810
+    url: "https://huggingface.co/joshuandwilliams/AutoCDAScorer"
