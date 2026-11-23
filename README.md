@@ -98,7 +98,7 @@ To record bounding boxes around CDAs in source images, use
 ## Guide
 
 The
-[guide](https://github.com/joshuandwilliams/AutoCDAScorer/blob/master/vignettes/AutoCDAScorer.Rmd)
+[guide](https://github.com/joshuandwilliams/AutoCDAScorer/blob/main/vignettes/AutoCDAScorer.Rmd)
 works through each step with example images and explains how to read the
 diagnostic plots.
 
