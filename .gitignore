@@ -8,3 +8,7 @@ inst/doc
 /doc/
 /Meta/
 tests/testthat/Rplots.pdf
+
+# Python bytecode from tools/
+__pycache__/
+*.pyc
